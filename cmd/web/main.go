@@ -1,7 +1,7 @@
 package main
 
 import (
-	"log"
+	"fmt"
 	"main/router"
 	"net/http"
 	"strconv"
@@ -12,7 +12,12 @@ const PORT = 8080
 func main() {
 	mux := router.Routes()
 
-	log.Println(PORT)
+	fmt.Println("Starting server on port", PORT)
+	err := http.ListenAndServe(":"+strconv.Itoa(PORT), mux)
+	if err != nil {
+		fmt.Println("Error starting server:", err)
+		return
+	}
 
-	_ = http.ListenAndServe(":"+strconv.Itoa(PORT), mux)
+	fmt.Println("Server is running on port", PORT)
 }

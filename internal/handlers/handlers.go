@@ -41,9 +41,10 @@ func WsEndpoint(w http.ResponseWriter, r *http.Request) {
 	ws, err := upgradeConnection.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println("Error upgrading connection:", err)
+		return
 	}
 
-	log.Println("Client connected to endpoint")
+	log.Println("Client connected to endpoint...")
 
 	var response WsJsonResponse
 	response.Message = `<em><small>Connected to server</small></em>`
@@ -52,6 +53,7 @@ func WsEndpoint(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Println("erro no WriteJson")
 		log.Println(err)
+		return
 	}
 
 }
@@ -69,6 +71,6 @@ func renderPage(w http.ResponseWriter, tmpl string, data jet.VarMap) error {
 		log.Println(err)
 		return err
 	}
-
+	log.Println(data)
 	return nil
 }

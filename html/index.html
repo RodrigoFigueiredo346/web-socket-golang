@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Chat</title>
+</head>
+
+<body>
+    <input type="text" id="messageInput" placeholder="Digite sua mensagem...">
+    <button onclick="sendMessage()">Enviar</button>
+    <ul id="messageList"></ul>
+    <script>
+
+        // Inicializar uma conexão WebSocket
+        const socket = new WebSocket("ws://localhost:8080/ws");
+
+        // Manipulador de eventos para quando a conexão é aberta
+        socket.onopen = function (event) {
+            console.log("Conexão WebSocket aberta.");
+        };
+
+        // Manipulador de eventos para quando a conexão recebe uma mensagem
+        socket.onmessage = function (event) {
+            const message = JSON.parse(event.data);
+            const messageList = document.getElementById("messageList");
+            const listItem = document.createElement("li");
+            listItem.textContent = message.sender + ": " + message.content;
+            messageList.appendChild(listItem);
+        };
+
+        // Função para enviar uma mensagem para o servidor
+        function sendMessage() {
+            const messageInput = document.getElementById("messageInput");
+            const message = {
+                sender: "Me",
+                content: messageInput.value
+            };
+            socket.send(JSON.stringify(message));
+            messageInput.value = "";
+        }
+    </script>
+</body>
+
+</html>

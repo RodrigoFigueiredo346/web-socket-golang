@@ -1,90 +1,46 @@
 package main
 
 import (
+	"fmt"
 	"log"
+
 	"net/http"
-	"os"
 
-	"github.com/gorilla/websocket"
+	"github.com/gorilla/mux"
 )
-
-var (
-	clients   = make(map[*websocket.Conn]bool) // mapa para armazenar conexões de clientes
-	broadcast = make(chan Message)             // canal de transmissão de mensagens
-	upgrader  = websocket.Upgrader{}
-)
-
-// Message estrutura para representar uma mensagem
-type Message struct {
-	Sender    string `json:"sender"`
-	Recipient string `json:"recipient"`
-	Content   string `json:"content"`
-}
 
 func main() {
-	// Configurar rota para lidar com atualizações de WebSocket
-	http.HandleFunc("/ws", handleConnections)
 
-	// Iniciar goroutine para manipular mensagens recebidas e enviá-las para o canal de transmissão
-	go handleMessages()
+	go mqtt.InitMqtt()
+	services.Config()
 
-	// Configurar servidor para servir arquivos estáticos e iniciar servidor HTTP
-	fs := http.FileServer(http.Dir("html"))
-	http.Handle("/", fs)
+	cfg := services.GetConfig()
 
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
-	}
+	r := mux.NewRouter()
+	r.Use(enableCORS)
+	r.HandleFunc("/ws", handler.WsHandler)
+	r.HandleFunc("/api/sub", handler.ApiSub).Methods(http.MethodPost, http.MethodOptions)
+	r.HandleFunc("/api/login", handler.Login).Methods(http.MethodPost, http.MethodOptions)
+	r.HandleFunc("/api/createUser", handler.CreateUser).Methods(http.MethodPost, http.MethodOptions)
 
-	log.Println("Servidor iniciado na porta", port)
-	err := http.ListenAndServe(":"+port, nil)
-	if err != nil {
-		log.Fatal("Erro ao iniciar servidor: ", err)
-	}
+	fmt.Printf("WebSocket running in ws://0.0.0.0:%s/ws\n", cfg.Port)
+
+	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%v", cfg.Port), r))
 }
 
-// handleConnections lida com as conexões WebSocket dos clientes
-func handleConnections(w http.ResponseWriter, r *http.Request) {
-	// Upgrade da conexão HTTP para WebSocket
-	conn, err := upgrader.Upgrade(w, r, nil)
-	if err != nil {
-		log.Fatal(err)
-	}
-	// Garantir que a conexão seja fechada ao sair da função
-	defer conn.Close()
+// Middleware para habilitar CORS
+func enableCORS(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*") // Permitir todas as origens
+		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 
-	// Adicionar nova conexão ao mapa de clientes
-	clients[conn] = true
-
-	// Loop para ler mensagens do cliente
-	for {
-		var msg Message
-		// Ler a mensagem JSON e armazenar em msg
-		err := conn.ReadJSON(&msg)
-		if err != nil {
-			log.Printf("Erro ao ler mensagem: %v", err)
-			delete(clients, conn)
-			break
+		// Se for uma requisição OPTIONS (preflight), responde diretamente
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusOK)
+			return
 		}
-		// Enviar a mensagem para o canal de transmissão
-		broadcast <- msg
-	}
-}
 
-// handleMessages transmite mensagens recebidas para todos os clientes conectados
-func handleMessages() {
-	for {
-		// Receber a próxima mensagem do canal de transmissão
-		msg := <-broadcast
-		// Enviar mensagem para todos os clientes
-		for client := range clients {
-			err := client.WriteJSON(msg)
-			if err != nil {
-				log.Printf("Erro ao enviar mensagem para o cliente: %v", err)
-				client.Close()
-				delete(clients, client)
-			}
-		}
-	}
+		next.ServeHTTP(w, r)
+	})
 }

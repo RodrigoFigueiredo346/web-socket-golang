@@ -3,6 +3,9 @@ package main
 import (
 	"fmt"
 	"log"
+	"main/internal/handler"
+	"main/internal/mqtt"
+	"main/internal/services"
 
 	"net/http"
 
@@ -21,7 +24,8 @@ func main() {
 	r.HandleFunc("/ws", handler.WsHandler)
 	r.HandleFunc("/api/sub", handler.ApiSub).Methods(http.MethodPost, http.MethodOptions)
 	r.HandleFunc("/api/login", handler.Login).Methods(http.MethodPost, http.MethodOptions)
-	r.HandleFunc("/api/createUser", handler.CreateUser).Methods(http.MethodPost, http.MethodOptions)
+	r.HandleFunc("/api/create-user", handler.CreateUser).Methods(http.MethodPost, http.MethodOptions)
+	r.HandleFunc("/api/create-panel", handler.CreatePanel).Methods(http.MethodPost, http.MethodOptions)
 
 	fmt.Printf("WebSocket running in ws://0.0.0.0:%s/ws\n", cfg.Port)
 

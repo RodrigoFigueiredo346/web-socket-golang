@@ -4,15 +4,31 @@ import (
 	"sync"
 )
 
+var cache *Cache
+var once sync.Once
+
+func init() {
+	NewCache()
+}
+
 type Cache struct {
 	data map[string]interface{}
 	mu   sync.RWMutex
 }
 
-func NewCache() *Cache {
-	return &Cache{
-		data: make(map[string]interface{}),
+func NewCache() {
+	once.Do(func() {
+		cache = &Cache{
+			data: make(map[string]interface{}),
+		}
+	})
+}
+
+func GetCache() *Cache {
+	if cache == nil {
+		NewCache()
 	}
+	return cache
 }
 
 func (c *Cache) Set(key string, value interface{}) {

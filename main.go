@@ -26,6 +26,7 @@ func main() {
 	r.HandleFunc("/api/login", handler.Login).Methods(http.MethodPost, http.MethodOptions)
 	r.HandleFunc("/api/create-user", handler.CreateUser).Methods(http.MethodPost, http.MethodOptions)
 	r.HandleFunc("/api/create-panel", handler.CreatePanel).Methods(http.MethodPost, http.MethodOptions)
+	r.HandleFunc("/api/get-panel-by-name/{name}", handler.GetPanelByName).Methods(http.MethodPost, http.MethodOptions)
 
 	fmt.Printf("WebSocket running in ws://0.0.0.0:%s/ws\n", cfg.Port)
 

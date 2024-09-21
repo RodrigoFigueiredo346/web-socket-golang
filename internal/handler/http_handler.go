@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"main/internal/models"
@@ -9,7 +10,18 @@ import (
 	"math/rand"
 	"net/http"
 	"strings"
+
+	"github.com/gorilla/mux"
 )
+
+func GetTokenFromHeader(r *http.Request) (string, error) {
+	token := r.Header.Get("Authorization")
+	tokenParts := strings.Split(token, " ")
+	if len(tokenParts) >= 2 {
+		return tokenParts[1], nil
+	}
+	return "", errors.New("token not found in header")
+}
 
 func ApiSub(w http.ResponseWriter, r *http.Request) {
 
@@ -134,24 +146,23 @@ func Login(w http.ResponseWriter, r *http.Request) {
 
 	paramsReq := requestModel.Params.(map[string]interface{})
 
+	// transformando inetrface em string
+	userGet := fmt.Sprintf("%v", paramsReq["user"])
+	passGet := fmt.Sprintf("%v", paramsReq["password"])
+
 	cache := services.GetCache()
-
-	userReq := paramsReq["user"]
-	passReq := paramsReq["password"]
-	userGet := fmt.Sprintf("%v", userReq)
-	passGet := fmt.Sprintf("%v", passReq)
-
 	userCache, ok := cache.Get(userGet)
 	if !ok {
-		http.Error(w, "User not registered", http.StatusInternalServerError)
+		http.Error(w, "User not registered", http.StatusNotFound)
 		return
 	}
 
 	userGet = fmt.Sprintf("%v", userCache)
+	fmt.Println(userGet)
 	userId := strings.Split(userGet, " ")[2]
 	passCache := strings.Split(userGet, " ")[1]
 	if passCache != passGet {
-		http.Error(w, "Verify your credencials", http.StatusInternalServerError)
+		http.Error(w, "Verify your credencials", http.StatusForbidden)
 		return
 	}
 
@@ -177,6 +188,21 @@ func Login(w http.ResponseWriter, r *http.Request) {
 func CreatePanel(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "aplication/json")
+
+	// token, err := GetTokenFromHeader(r)
+	// if err != nil {
+	// 	http.Error(w, "Token not found", http.StatusUnauthorized)
+	// 	return
+	// }
+
+	// if err = services.VerifyToken(token); err != nil {
+	// 	http.Error(w, "Token invalid", http.StatusUnauthorized)
+	// 	fmt.Println(err)
+	// 	return
+	// }
+
+	//TODO
+	//verificar se token é do usuario
 
 	var requestModel models.JsonRpcRequest
 
@@ -209,8 +235,10 @@ func CreatePanel(w http.ResponseWriter, r *http.Request) {
 	}
 	cache := services.GetCache()
 
-	cache.Set(string(panelModel.ID), panelModel)
-	_, ok := cache.Get(string(panelModel.ID))
+	cache.Set(panelModel.Name, panelModel)
+	panel, ok := cache.Get(string(panelModel.Name))
+
+	fmt.Println(panelModel.Name, " = ", panel)
 	if !ok {
 		http.Error(w, "Panel not registered", http.StatusInternalServerError)
 		return
@@ -226,7 +254,59 @@ func CreatePanel(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error Marshal userResponse", http.StatusInternalServerError)
 		return
 	}
-	fmt.Println(fmt.Sprintf("Panel %d register succesfully", string(panelModel.ID)))
+	fmt.Println("Panel register succesfully")
 
 	w.Write([]byte(responseJSON))
+}
+
+func GetPanelByName(w http.ResponseWriter, r *http.Request) {
+
+	w.Header().Set("Content-Type", "application/json")
+
+	// body, err := io.ReadAll(r.Body)
+	// if err != nil {
+	// 	http.Error(w, "Cannot read body", http.StatusBadRequest)
+	// 	return
+	// }
+	// defer r.Body.Close()
+
+	// err = json.Unmarshal(body, &requestModel)
+	// if err != nil {
+	// 	http.Error(w, "Invalid JSON", http.StatusBadRequest)
+	// 	return
+	// }
+
+	vars := mux.Vars(r)
+	panelName := vars["name"]
+
+	cache := services.GetCache()
+
+	// allCache := cache.GetAll()
+
+	fmt.Println(panelName)
+
+	panel, found := cache.Get(panelName)
+	if !found {
+		http.Error(w, "Panel not found", http.StatusNotFound)
+		return
+	}
+
+	panelModel, ok := panel.(models.PanelModel)
+	if !ok {
+		http.Error(w, "Error retrieving panel", http.StatusInternalServerError)
+		return
+	}
+
+	response := models.JsonRpcResponse{
+		Result: panelModel,
+		ID:     999999,
+	}
+
+	responseJSON, err := json.Marshal(response)
+	if err != nil {
+		http.Error(w, "Error marshalling panel", http.StatusInternalServerError)
+		return
+	}
+
+	w.Write(responseJSON)
 }

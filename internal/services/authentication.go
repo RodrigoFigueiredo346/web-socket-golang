@@ -28,7 +28,7 @@ func CreateToken(userID string) (string, error) {
 	return tokenString, nil
 }
 
-func verifyToken(tokenString string) error {
+func VerifyToken(tokenString string) error {
 	secretKey := GetConfig().SecretKey
 
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {

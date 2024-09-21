@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 	"main/internal/models"
-	"main/internal/services"
+	"main/internal/mqtt"
 	"sync"
 
 	"net/http"
@@ -41,7 +41,7 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 	clients[conn] = true
 	clientsMutex.Unlock()
 
-	go once.Do(func() { services.BroadcastTime(clients, &clientsMutex) })
+	go once.Do(func() { mqtt.BroadcastTime(clients, &clientsMutex) })
 
 	for {
 		_, message, err := conn.ReadMessage()

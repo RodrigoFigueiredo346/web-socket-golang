@@ -56,19 +56,14 @@ func (c *Cache) Clear() {
 	c.data = make(map[string]interface{})
 }
 
-// // Adding data to the cache
-// cache.Set("key1", "value1")
-// cache.Set("key2", 123)
+func (c *Cache) GetAll() map[string]interface{} {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
 
-// // Retrieving data from the cache
-// if val, ok := cache.Get("key1"); ok {
-// 	fmt.Println("Value for key1:", val)
-// }
-
-// // Deleting data from the cache
-// cache.Delete("key2")
-
-// // Clearing the cache
-// cache.Clear()
-
-// time.Sleep(time.Second) // Sleep to allow cache operations to complete
+	// Retorna uma cópia do mapa para evitar concorrência direta ao acessar o cache original
+	copiedData := make(map[string]interface{})
+	for key, value := range c.data {
+		copiedData[key] = value
+	}
+	return copiedData
+}

@@ -1,7 +1,9 @@
 package services
 
 import (
+	"fmt"
 	"sync"
+	"unsafe"
 )
 
 var cache *Cache
@@ -66,4 +68,16 @@ func (c *Cache) GetAll() map[string]interface{} {
 		copiedData[key] = value
 	}
 	return copiedData
+}
+
+func (c *Cache) GetMemoryUsage() string {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
+	var totalSize uintptr
+	for key, value := range c.data {
+		totalSize += unsafe.Sizeof(key) + unsafe.Sizeof(value)
+	}
+
+	return fmt.Sprintf("Approximate memory usage: %d bytes", totalSize)
 }

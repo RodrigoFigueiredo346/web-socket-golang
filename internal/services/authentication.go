@@ -11,7 +11,7 @@ func CreateToken(userID string) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256,
 		jwt.MapClaims{
 			"userID": userID,
-			"exp":    time.Now().Add(time.Minute * 10).Unix(),
+			"exp":    time.Now().Add(time.Minute * 2).Unix(),
 		})
 
 	secretKey := GetConfig().SecretKey
@@ -44,4 +44,18 @@ func VerifyToken(tokenString string) error {
 	}
 
 	return nil
+}
+
+func IsTokenExpired(token *jwt.Token) bool {
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		return true
+	}
+
+	exp, ok := claims["exp"].(float64)
+	if !ok {
+		return true
+	}
+
+	return time.Now().Unix() > int64(exp)
 }

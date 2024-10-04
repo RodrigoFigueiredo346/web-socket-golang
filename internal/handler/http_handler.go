@@ -70,6 +70,7 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Cannot read body", http.StatusBadRequest)
 		return
 	}
+	defer r.Body.Close()
 
 	err = json.Unmarshal(body, &requestModel)
 	if err != nil {
@@ -88,7 +89,7 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 
 	cache := services.GetCache()
 
-	_, ok := cache.Get(string(user))
+	_, ok := cache.Get(user)
 	if ok {
 		http.Error(w, "User already registered ", http.StatusInternalServerError)
 		return
@@ -146,7 +147,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 
 	paramsReq := requestModel.Params.(map[string]interface{})
 
-	// transformando inetrface em string
+	// transformando interface em string
 	userGet := fmt.Sprintf("%v", paramsReq["user"])
 	passGet := fmt.Sprintf("%v", paramsReq["password"])
 

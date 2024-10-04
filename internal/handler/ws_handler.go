@@ -6,6 +6,7 @@ import (
 	"log"
 	"main/internal/models"
 	"main/internal/mqtt"
+	"main/internal/services"
 	"sync"
 
 	"net/http"
@@ -28,6 +29,12 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 		CheckOrigin: func(r *http.Request) bool {
 			return true
 		},
+	}
+
+	err := services.VerifyToken(r)
+	if err != nil {
+		http.Error(w, "Unauthorized: Invalid token", http.StatusUnauthorized)
+		return
 	}
 
 	conn, err := upgrader.Upgrade(w, r, nil)

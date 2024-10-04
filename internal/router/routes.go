@@ -24,7 +24,7 @@ var Routes = []models.Routes{
 	{
 		URI:                   "/ws",
 		Function:              handler.WsHandler,
-		Method:                []string{""},
+		Method:                []string{http.MethodGet},
 		RequireAuthentication: true,
 	},
 

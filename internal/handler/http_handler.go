@@ -2,7 +2,7 @@ package handler
 
 import (
 	"encoding/json"
-	"errors"
+
 	"fmt"
 	"io"
 	"main/internal/models"
@@ -13,15 +13,6 @@ import (
 
 	"github.com/gorilla/mux"
 )
-
-func GetTokenFromHeader(r *http.Request) (string, error) {
-	token := r.Header.Get("Authorization")
-	tokenParts := strings.Split(token, " ")
-	if len(tokenParts) >= 2 {
-		return tokenParts[1], nil
-	}
-	return "", errors.New("token not found in header")
-}
 
 func ApiSub(w http.ResponseWriter, r *http.Request) {
 
@@ -190,20 +181,11 @@ func CreatePanel(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "aplication/json")
 
-	// token, err := GetTokenFromHeader(r)
-	// if err != nil {
-	// 	http.Error(w, "Token not found", http.StatusUnauthorized)
-	// 	return
-	// }
-
-	// if err = services.VerifyToken(token); err != nil {
-	// 	http.Error(w, "Token invalid", http.StatusUnauthorized)
-	// 	fmt.Println(err)
-	// 	return
-	// }
-
-	//TODO
-	//verificar se token é do usuario
+	if err := services.VerifyToken(r); err != nil {
+		http.Error(w, "Token invalid", http.StatusUnauthorized)
+		fmt.Println(err)
+		return
+	}
 
 	var requestModel models.JsonRpcRequest
 
@@ -237,13 +219,13 @@ func CreatePanel(w http.ResponseWriter, r *http.Request) {
 	cache := services.GetCache()
 
 	cache.Set(panelModel.Name, panelModel)
-	panel, ok := cache.Get(string(panelModel.Name))
 
-	fmt.Println(panelModel.Name, " = ", panel)
+	panel, ok := cache.Get(string(panelModel.Name))
 	if !ok {
 		http.Error(w, "Panel not registered", http.StatusInternalServerError)
 		return
 	}
+	fmt.Println(panelModel.Name, " = ", panel)
 
 	var response models.JsonRpcResponse
 
@@ -255,7 +237,6 @@ func CreatePanel(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error Marshal userResponse", http.StatusInternalServerError)
 		return
 	}
-	fmt.Println("Panel register succesfully")
 
 	w.Write([]byte(responseJSON))
 }

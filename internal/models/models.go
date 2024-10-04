@@ -1,5 +1,7 @@
 package models
 
+import "net/http"
+
 type JsonRpcRequest struct {
 	Method string      `json:"method"`
 	Params interface{} `json:"params"`
@@ -25,4 +27,11 @@ type User struct {
 	Password string
 	ID       int
 	Token    string
+}
+
+type Routes struct {
+	URI                   string
+	Method                []string
+	Function              func(http.ResponseWriter, *http.Request)
+	RequireAuthentication bool
 }

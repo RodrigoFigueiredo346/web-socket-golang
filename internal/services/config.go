@@ -7,7 +7,7 @@ import (
 )
 
 type cfg struct {
-	SecretKey string
+	SecretKey []byte
 	Port      string
 }
 
@@ -21,7 +21,7 @@ func Config() {
 	}
 
 	appCfg = &cfg{
-		SecretKey: Env["SECRET_KEY"],
+		SecretKey: []byte(Env["SECRET_KEY"]),
 		Port:      Env["PORT"],
 	}
 

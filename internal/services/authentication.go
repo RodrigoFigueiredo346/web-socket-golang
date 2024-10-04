@@ -2,6 +2,8 @@ package services
 
 import (
 	"fmt"
+	"net/http"
+	"strings"
 	"time"
 
 	jwt "github.com/golang-jwt/jwt/v5"
@@ -15,24 +17,23 @@ func CreateToken(userID string) (string, error) {
 		})
 
 	secretKey := GetConfig().SecretKey
-
-	tokenString, err := token.SignedString([]byte(secretKey))
-	if err != nil {
-		return "", err
-	}
-
-	if err != nil {
-		return "", err
-	}
-
-	return tokenString, nil
+	return token.SignedString(secretKey)
 }
 
-func VerifyToken(tokenString string) error {
-	secretKey := GetConfig().SecretKey
+func VerifyToken(r *http.Request) error {
+
+	tokenInHeader := r.Header.Get("Authorization")
+	tokenParts := strings.Split(tokenInHeader, " ")
+	if len(tokenParts) != 2 {
+		return fmt.Errorf("token invalid")
+	}
+	tokenString := tokenParts[1]
 
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		return secretKey, nil
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+		return GetConfig().SecretKey, nil
 	})
 
 	if err != nil {
@@ -42,7 +43,6 @@ func VerifyToken(tokenString string) error {
 	if !token.Valid {
 		return fmt.Errorf("invalid token")
 	}
-
 	return nil
 }
 
@@ -58,4 +58,26 @@ func IsTokenExpired(token *jwt.Token) bool {
 	}
 
 	return time.Now().Unix() > int64(exp)
+}
+
+func ExtractUserIDFromToken(tokenString string) (string, error) {
+	secretKey := GetConfig().SecretKey
+
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		return secretKey, nil
+	})
+
+	if err != nil {
+		return "", err
+	}
+
+	// Extraindo as claims
+	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+		if userID, ok := claims["userID"].(string); ok {
+			return userID, nil
+		}
+		return "", fmt.Errorf("userID not found in token")
+	} else {
+		return "", fmt.Errorf("invalid token")
+	}
 }

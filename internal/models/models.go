@@ -15,11 +15,13 @@ type JsonRpcResponse struct {
 }
 
 type PanelModel struct {
-	ID         int      `json:"id,omitempty"`
-	Name       string   `json:"name"`
-	Status     string   `json:"status,omitempty"`
-	Messages   []string `json:"messages,omitempty"`
-	BrightMode int      `json:"bright_mode,omitempty"`
+	ID          int      `json:"id,omitempty"`
+	Identifier  string   `json:"identifier,omitempty"`
+	Dscpanel    string   `json:"dscpanel"`
+	Num_serie   string   `json:"num_serie,omitempty"`
+	Active      int      `json:"active,omitempty"`
+	Ctrl_bright int      `json:"ctrl_bright,omitempty"`
+	Messages    []string `json:"messages,omitempty"`
 }
 
 type User struct {

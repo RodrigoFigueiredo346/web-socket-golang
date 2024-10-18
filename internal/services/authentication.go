@@ -2,6 +2,7 @@ package services
 
 import (
 	"fmt"
+	"main/internal/config"
 	"net/http"
 	"strings"
 	"time"
@@ -13,14 +14,15 @@ func CreateToken(userID string) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256,
 		jwt.MapClaims{
 			"userID": userID,
-			"exp":    time.Now().Add(time.Minute * 2).Unix(),
+			"exp":    time.Now().Add(time.Minute * 1000).Unix(),
 		})
+	secretKey := config.GetConfig().SecretKey
 
-	secretKey := GetConfig().SecretKey
 	return token.SignedString(secretKey)
 }
 
 func VerifyToken(r *http.Request) error {
+	secretKey := config.GetConfig().SecretKey
 
 	tokenInHeader := r.Header.Get("Authorization")
 	tokenParts := strings.Split(tokenInHeader, " ")
@@ -33,7 +35,8 @@ func VerifyToken(r *http.Request) error {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
-		return GetConfig().SecretKey, nil
+
+		return secretKey, nil
 	})
 
 	if err != nil {
@@ -61,7 +64,7 @@ func IsTokenExpired(token *jwt.Token) bool {
 }
 
 func ExtractUserIDFromToken(tokenString string) (string, error) {
-	secretKey := GetConfig().SecretKey
+	secretKey := config.GetConfig().SecretKey
 
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		return secretKey, nil

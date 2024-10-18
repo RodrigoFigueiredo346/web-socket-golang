@@ -30,7 +30,7 @@ func InitMqtt() {
 	}
 
 	// tópico de assinatura
-	topicSub := "pmv"
+	topicSub := "server"
 	if token := client.Subscribe(topicSub, 0, nil); token.Wait() && token.Error() != nil {
 		log.Println("Error subscribing to topic:", token.Error())
 		return
@@ -50,5 +50,7 @@ func Publish(topic, message string) {
 
 func onMessageReceived(client MQTT.Client, msg MQTT.Message) {
 	log.Printf("Received message in the topic %s: %s\n", msg.Topic(), msg.Payload())
+	// end := time.Now().Format("15:04:05.000")
+	// fmt.Println("end:xxxxxxxxxx ", end)
 
 }

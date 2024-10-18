@@ -1,4 +1,4 @@
-package handler
+package handlers
 
 import (
 	"encoding/json"
@@ -31,11 +31,11 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 		},
 	}
 
-	err := services.VerifyToken(r)
-	if err != nil {
-		http.Error(w, "Unauthorized: Invalid token", http.StatusUnauthorized)
-		return
-	}
+	// err := services.VerifyToken(r)
+	// if err != nil {
+	// 	http.Error(w, "Unauthorized: Invalid token", http.StatusUnauthorized)
+	// 	return
+	// }
 
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
@@ -43,6 +43,8 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer conn.Close()
+
+	ws := services.NewWsService()
 
 	clientsMutex.Lock()
 	clients[conn] = true
@@ -52,6 +54,9 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 
 	for {
 		_, message, err := conn.ReadMessage()
+		//start := time.Now().Format("15:04:05.000")
+		//fmt.Println("start:xxxxxxxxxxxxxxxx ", start)
+
 		if err != nil {
 			log.Println(err)
 			clientsMutex.Lock()
@@ -70,36 +75,24 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 
 		if err := json.Unmarshal([]byte(messageStr), &request); err != nil {
 			log.Printf("Error decoding JSON-RPC: %v\n", err)
-			conn.WriteMessage(websocket.TextMessage, []byte("Invalid request"))
+			conn.WriteMessage(websocket.TextMessage, []byte("Invalid request..."))
 			continue
 		}
+		var response string
+		res, err := ws.HandleRequest(request.Method, request.Params, request.ID)
+		if err != nil {
+			log.Println(err)
+			response = fmt.Sprintf(`{"error":"%v","id":%d}`, err, request.ID)
 
-		if request.Method == "sum" {
-			// topic := "server"
-			// payload := request.Params.(string)
-			// mqtt.Publish(topic, payload)
+		} else {
+			response = fmt.Sprintf(`{"result":"%v","id":%d}`, res, request.ID)
+		}
 
-			sumParams, ok := request.Params.(map[string]interface{})
-			if !ok {
-				log.Println("Error converting Params para map[string]interface{}")
-				return
-			}
+		err = conn.WriteMessage(websocket.TextMessage, []byte(response))
 
-			n1, ok1 := sumParams["n1"].(float64) // JSON decodifica números como float64
-			n2, ok2 := sumParams["n2"].(float64)
-
-			if !ok1 || !ok2 {
-				log.Println("Error converting parameters to integers")
-				return
-			}
-
-			sum := n1 + n2
-
-			if err := conn.WriteMessage(websocket.TextMessage, []byte(fmt.Sprintf("%2.f", sum))); err != nil {
-				log.Println(err)
-				return
-			}
-
+		if err != nil {
+			log.Println(err)
+			return
 		}
 
 	}

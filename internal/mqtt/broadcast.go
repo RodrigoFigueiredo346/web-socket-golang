@@ -12,8 +12,8 @@ import (
 
 func BroadcastTime(clients map[*websocket.Conn]bool, clientsMutex *sync.Mutex) {
 	fmt.Println("Starting broadcast...")
-	id := 10000 + rand.Intn(99999)
-	ticker := time.NewTicker(1 * time.Second) // Envia a cada 1 segundo
+	id := 10000 + rand.Intn(89999)
+	ticker := time.NewTicker(30 * time.Second)
 	defer ticker.Stop()
 
 	for {
@@ -24,7 +24,10 @@ func BroadcastTime(clients map[*websocket.Conn]bool, clientsMutex *sync.Mutex) {
 
 		// Trava o mutex para garantir acesso seguro ao mapa de clientes
 		clientsMutex.Lock()
+		nc := 1
 		for client := range clients {
+			//fmt.Println("enviando para o cliente... ", nc)
+			nc++
 			err := client.WriteMessage(websocket.TextMessage, []byte(response))
 			if err != nil {
 				log.Printf("Error publishing message: %v\n", err)

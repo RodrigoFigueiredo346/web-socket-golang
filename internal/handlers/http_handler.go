@@ -1,4 +1,4 @@
-package handler
+package handlers
 
 import (
 	"encoding/json"
@@ -10,8 +10,6 @@ import (
 	"math/rand"
 	"net/http"
 	"strings"
-
-	"github.com/gorilla/mux"
 )
 
 func ApiSub(w http.ResponseWriter, r *http.Request) {
@@ -177,118 +175,23 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(responseJSON))
 }
 
-func CreatePanel(w http.ResponseWriter, r *http.Request) {
-
-	w.Header().Set("Content-Type", "aplication/json")
-
-	if err := services.VerifyToken(r); err != nil {
-		http.Error(w, "Token invalid", http.StatusUnauthorized)
-		fmt.Println(err)
-		return
-	}
-
-	var requestModel models.JsonRpcRequest
-
-	body, err := io.ReadAll(r.Body)
-	if err != nil {
-		http.Error(w, "Cannot read body", http.StatusBadRequest)
-		return
-	}
-	defer r.Body.Close()
-
-	err = json.Unmarshal(body, &requestModel)
-	if err != nil {
-		http.Error(w, "Invalid JSON", http.StatusBadRequest)
-		return
-	}
-
-	parameters := requestModel.Params.(map[string]interface{})
-	messages := parameters["messages"].([]interface{})
-	name := parameters["name"].(string)
-	brightMode := parameters["bright_mode"].(float64)
-	var msgs []string
-	for _, msg := range messages {
-		msgs = append(msgs, fmt.Sprintf("%v", msg))
-	}
-	panelModel := models.PanelModel{
-		ID:         123,
-		Name:       name,
-		Messages:   msgs,
-		BrightMode: int(brightMode),
-	}
-	cache := services.GetCache()
-
-	cache.Set(panelModel.Name, panelModel)
-
-	panel, ok := cache.Get(string(panelModel.Name))
-	if !ok {
-		http.Error(w, "Panel not registered", http.StatusInternalServerError)
-		return
-	}
-	fmt.Println(panelModel.Name, " = ", panel)
-
-	var response models.JsonRpcResponse
-
-	response.Result = "Panel register succesfully"
-	response.ID = requestModel.ID
-
-	responseJSON, err := json.Marshal(response)
-	if err != nil {
-		http.Error(w, "Error Marshal userResponse", http.StatusInternalServerError)
-		return
-	}
-
-	w.Write([]byte(responseJSON))
-}
-
-func GetPanelByName(w http.ResponseWriter, r *http.Request) {
+func GetPanels(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 
-	// body, err := io.ReadAll(r.Body)
-	// if err != nil {
-	// 	http.Error(w, "Cannot read body", http.StatusBadRequest)
-	// 	return
-	// }
-	// defer r.Body.Close()
-
-	// err = json.Unmarshal(body, &requestModel)
-	// if err != nil {
-	// 	http.Error(w, "Invalid JSON", http.StatusBadRequest)
-	// 	return
-	// }
-
-	vars := mux.Vars(r)
-	panelName := vars["name"]
-
 	cache := services.GetCache()
-
-	// allCache := cache.GetAll()
-
-	fmt.Println(panelName)
-
-	panel, found := cache.Get(panelName)
-	if !found {
-		http.Error(w, "Panel not found", http.StatusNotFound)
-		return
-	}
-
-	panelModel, ok := panel.(models.PanelModel)
-	if !ok {
-		http.Error(w, "Error retrieving panel", http.StatusInternalServerError)
-		return
-	}
+	allCache := cache.GetAll()
 
 	response := models.JsonRpcResponse{
-		Result: panelModel,
+		Result: allCache,
 		ID:     999999,
 	}
 
 	responseJSON, err := json.Marshal(response)
 	if err != nil {
-		http.Error(w, "Error marshalling panel", http.StatusInternalServerError)
+		http.Error(w, "Error marshalling panels", http.StatusInternalServerError)
 		return
 	}
-
 	w.Write(responseJSON)
+
 }

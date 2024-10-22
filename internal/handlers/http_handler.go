@@ -105,25 +105,20 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	userGet := fmt.Sprintf("%v", paramsReq["user"])
 	passGet := fmt.Sprintf("%v", paramsReq["password"])
 
-	//verifico no banco se existe user se senha está correta
-
 	dt := sqlc.New(db.DB)
 
-	userID, err := dt.GetUserByLoginAndPassword(ctx, sqlc.GetUserByLoginAndPasswordParams{
+	user, err := dt.GetUserByLoginAndPassword(ctx, sqlc.GetUserByLoginAndPasswordParams{
 		Login: userGet,
 		Pass:  passGet,
 	})
+
 	if err != nil {
 		if err == sql.ErrNoRows {
-			// Handle case where user is not found or password is incorrect
 			fmt.Println("Login failed: user not found or incorrect password")
 		} else {
-			// Handle other potential database errors
 			log.Fatal(err)
 		}
 	}
-
-	fmt.Println(userID)
 
 	// crio token
 
@@ -146,42 +141,43 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		}
 	*/
 
-	// token, err := services.CreateToken(userID)
-	// if err != nil {
-	// 	http.Error(w, fmt.Sprintf("Error creating token: %v", err), http.StatusInternalServerError)
-	// 	return
-	// }
-	// var response models.JsonRpcResponse
+	token, err := services.CreateToken(user.Iduser)
 
-	// response.Result = token
-	// response.ID = requestModel.ID
-
-	// responseJSON, err := json.Marshal(response)
-	// if err != nil {
-	// 	http.Error(w, "Error Marshal userResponse", http.StatusInternalServerError)
-	// 	return
-	// }
-
-	// w.Write([]byte(responseJSON))
-}
-
-func GetPanels(w http.ResponseWriter, r *http.Request) {
-
-	w.Header().Set("Content-Type", "application/json")
-
-	cache := services.GetCache()
-	allCache := cache.GetAll()
-
-	response := models.JsonRpcResponse{
-		Result: allCache,
-		ID:     999999,
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Error creating token: %v", err), http.StatusInternalServerError)
+		return
 	}
+	var response models.JsonRpcResponse
+
+	response.Result = token
+	response.ID = requestModel.ID
 
 	responseJSON, err := json.Marshal(response)
 	if err != nil {
-		http.Error(w, "Error marshalling panels", http.StatusInternalServerError)
+		http.Error(w, "Error Marshal userResponse", http.StatusInternalServerError)
 		return
 	}
-	w.Write(responseJSON)
 
+	w.Write([]byte(responseJSON))
 }
+
+// func GetPanels(w http.ResponseWriter, r *http.Request) {
+
+// 	w.Header().Set("Content-Type", "application/json")
+
+// 	cache := services.GetCache()
+// 	allCache := cache.GetAll()
+
+// 	response := models.JsonRpcResponse{
+// 		Result: allCache,
+// 		ID:     999999,
+// 	}
+
+// 	responseJSON, err := json.Marshal(response)
+// 	if err != nil {
+// 		http.Error(w, "Error marshalling panels", http.StatusInternalServerError)
+// 		return
+// 	}
+// 	w.Write(responseJSON)
+
+// }

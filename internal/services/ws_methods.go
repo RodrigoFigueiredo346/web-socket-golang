@@ -8,9 +8,10 @@ import (
 	"main/internal/db"
 	"main/internal/mqtt"
 	"main/sqlc"
-	"math/rand"
 	"strconv"
 	"time"
+
+	"golang.org/x/exp/rand"
 )
 
 func (ws *WsService) readPanelStatus(params interface{}, id int) (interface{}, error) {
@@ -80,7 +81,7 @@ func (ws *WsService) readPanelStatus(params interface{}, id int) (interface{}, e
 	idsinc, err := dt.CreateSinc(ctx, sqlc.CreateSincParams{
 		Idpanel: identifier,
 		Tag:     "readPanelStatus",
-		Data:    sql.NullString{String: "", Valid: false},
+		Data:    DBString(""),
 		Sinc:    0})
 
 	if err != nil {

@@ -1,54 +1,20 @@
 package handlers
 
 import (
+	"context"
+	"database/sql"
 	"encoding/json"
+	"log"
 
 	"fmt"
 	"io"
+	"main/internal/db"
 	"main/internal/models"
 	"main/internal/services"
+	"main/sqlc"
 	"math/rand"
 	"net/http"
-	"strings"
 )
-
-func ApiSub(w http.ResponseWriter, r *http.Request) {
-
-	contentType := r.Header.Get("Content-Type")
-
-	if !strings.HasPrefix(contentType, "application/json") { //TODO splitar
-		http.Error(w, "Content-Type must be 'application/json'", http.StatusUnsupportedMediaType)
-		return
-	}
-
-	var requestModel models.JsonRpcRequest
-
-	body, err := io.ReadAll(r.Body)
-	if err != nil {
-		http.Error(w, "Cannot read body", http.StatusBadRequest)
-		return
-	}
-
-	err = json.Unmarshal(body, &requestModel)
-	if err != nil {
-		http.Error(w, "Invalid JSON", http.StatusBadRequest)
-		return
-	}
-
-	paramsMap := requestModel.Params.(map[string]interface{})
-
-	n1, ok1 := paramsMap["n1"].(float64)
-	n2, ok2 := paramsMap["n2"].(float64)
-	if !ok1 || !ok2 {
-		http.Error(w, "Missing or invalid parameters", http.StatusBadRequest)
-		return
-	}
-
-	result := n1 - n2
-
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(fmt.Sprintf(`{"result": %.2f, "id": %d}`, result, requestModel.ID)))
-}
 
 func CreateUser(w http.ResponseWriter, r *http.Request) {
 
@@ -112,8 +78,7 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 func Login(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "aplication/json")
-
-	//TODO - apesar de ser possível validar, o "method" perde sentido por ser REST
+	ctx := context.Background()
 
 	//todo controlar numero de tentativas de cadastro por IP????
 	// 	ip := r.Header.Get("X-Forwarded-For")
@@ -140,39 +105,64 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	userGet := fmt.Sprintf("%v", paramsReq["user"])
 	passGet := fmt.Sprintf("%v", paramsReq["password"])
 
-	cache := services.GetCache()
-	userCache, ok := cache.Get(userGet)
-	if !ok {
-		http.Error(w, "User not registered", http.StatusNotFound)
-		return
-	}
+	//verifico no banco se existe user se senha está correta
 
-	userGet = fmt.Sprintf("%v", userCache)
-	fmt.Println(userGet)
-	userId := strings.Split(userGet, " ")[2]
-	passCache := strings.Split(userGet, " ")[1]
-	if passCache != passGet {
-		http.Error(w, "Verify your credencials", http.StatusForbidden)
-		return
-	}
+	dt := sqlc.New(db.DB)
 
-	token, err := services.CreateToken(userId)
+	userID, err := dt.GetUserByLoginAndPassword(ctx, sqlc.GetUserByLoginAndPasswordParams{
+		Login: userGet,
+		Pass:  passGet,
+	})
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Error creating token: %v", err), http.StatusInternalServerError)
-		return
-	}
-	var response models.JsonRpcResponse
-
-	response.Result = token
-	response.ID = requestModel.ID
-
-	responseJSON, err := json.Marshal(response)
-	if err != nil {
-		http.Error(w, "Error Marshal userResponse", http.StatusInternalServerError)
-		return
+		if err == sql.ErrNoRows {
+			// Handle case where user is not found or password is incorrect
+			fmt.Println("Login failed: user not found or incorrect password")
+		} else {
+			// Handle other potential database errors
+			log.Fatal(err)
+		}
 	}
 
-	w.Write([]byte(responseJSON))
+	fmt.Println(userID)
+
+	// crio token
+
+	//devolvo token na resposta
+
+	/*
+		cache := services.GetCache()
+		userCache, ok := cache.Get(userGet)
+		if !ok {
+			http.Error(w, "User not registered", http.StatusNotFound)
+			return
+		}
+		userGet = fmt.Sprintf("%v", userCache)
+		fmt.Println(userGet)
+		userId := strings.Split(userGet, " ")[2]
+		passCache := strings.Split(userGet, " ")[1]
+		if passCache != passGet {
+			http.Error(w, "Verify your credencials", http.StatusForbidden)
+			return
+		}
+	*/
+
+	// token, err := services.CreateToken(userID)
+	// if err != nil {
+	// 	http.Error(w, fmt.Sprintf("Error creating token: %v", err), http.StatusInternalServerError)
+	// 	return
+	// }
+	// var response models.JsonRpcResponse
+
+	// response.Result = token
+	// response.ID = requestModel.ID
+
+	// responseJSON, err := json.Marshal(response)
+	// if err != nil {
+	// 	http.Error(w, "Error Marshal userResponse", http.StatusInternalServerError)
+	// 	return
+	// }
+
+	// w.Write([]byte(responseJSON))
 }
 
 func GetPanels(w http.ResponseWriter, r *http.Request) {

@@ -6,7 +6,50 @@ package sqlc
 
 import (
 	"database/sql"
+	"time"
 )
+
+type BrightLum struct {
+	Idlum      string
+	Luminosity int32
+	Bright     int32
+	DthrIns    sql.NullTime
+	DthrAlt    sql.NullTime
+}
+
+type BrightTime struct {
+	Idtime  string
+	Time    time.Time
+	Bright  int32
+	DthrIns sql.NullTime
+	DthrAlt sql.NullTime
+}
+
+type Fun struct {
+	Idfun   string
+	Dsc     string
+	FunOn   int32
+	FunOff  int32
+	DthrIns sql.NullTime
+	DthrAlt sql.NullTime
+}
+
+type Msg struct {
+	Msg     int32
+	Dsc     string
+	DthrIns sql.NullTime
+	DthrAlt sql.NullTime
+}
+
+type MsgPag struct {
+	Msg     int32
+	Page    int32
+	Data    string
+	TimeMs  int32
+	Active  int32
+	DthrIns sql.NullTime
+	DthrAlt sql.NullTime
+}
 
 type Panel struct {
 	Idpanel    int32
@@ -19,7 +62,14 @@ type Panel struct {
 	DthrAlt    sql.NullTime
 }
 
-type Sinc3 struct {
+type PanelStatus struct {
+	Idstatus string
+	Idpanel  string
+	Status   string
+	DthrIns  sql.NullTime
+}
+
+type Sinc struct {
 	Idsinc   int32
 	Idpanel  string
 	Tag      string
@@ -27,4 +77,32 @@ type Sinc3 struct {
 	DthrIns  sql.NullTime
 	Sinc     int32
 	DthrSinc sql.NullTime
+}
+
+type User struct {
+	Iduser  string
+	Name    string
+	Login   string
+	Pass    string
+	Active  sql.NullInt32
+	Level   int32
+	DthrIns sql.NullTime
+	DthrAlt sql.NullTime
+}
+
+type UserLog struct {
+	Idlog    string
+	Iduser   string
+	Action   string
+	Complete string
+	DthrIns  sql.NullTime
+}
+
+type UserPanel struct {
+	Iduser  string
+	Name    string
+	Pass    string
+	Active  sql.NullInt32
+	DthrIns sql.NullTime
+	DthrAlt sql.NullTime
 }

@@ -8,7 +8,106 @@ package sqlc
 import (
 	"context"
 	"database/sql"
+	"time"
 )
+
+const createBrightLum = `-- name: CreateBrightLum :exec
+INSERT INTO bright_lum (idlum, luminosity, bright, dthr_ins, dthr_alt)
+VALUES ($1, $2, $3, DEFAULT, DEFAULT)
+`
+
+type CreateBrightLumParams struct {
+	Idlum      string
+	Luminosity int32
+	Bright     int32
+}
+
+// ------------------bright_lum-----------------------------
+func (q *Queries) CreateBrightLum(ctx context.Context, arg CreateBrightLumParams) error {
+	_, err := q.db.ExecContext(ctx, createBrightLum, arg.Idlum, arg.Luminosity, arg.Bright)
+	return err
+}
+
+const createBrightTime = `-- name: CreateBrightTime :exec
+INSERT INTO bright_time (idtime, time, bright, dthr_ins, dthr_alt)
+VALUES ($1, $2, $3, DEFAULT, DEFAULT)
+`
+
+type CreateBrightTimeParams struct {
+	Idtime string
+	Time   time.Time
+	Bright int32
+}
+
+// ------------------bright_time-----------------------------
+func (q *Queries) CreateBrightTime(ctx context.Context, arg CreateBrightTimeParams) error {
+	_, err := q.db.ExecContext(ctx, createBrightTime, arg.Idtime, arg.Time, arg.Bright)
+	return err
+}
+
+const createFun = `-- name: CreateFun :exec
+INSERT INTO fun (idfun, dsc, fun_on, fun_off, dthr_ins, dthr_alt)
+VALUES ($1, $2, $3, $4, DEFAULT, DEFAULT)
+`
+
+type CreateFunParams struct {
+	Idfun  string
+	Dsc    string
+	FunOn  int32
+	FunOff int32
+}
+
+// -----------------fun-------------------------------
+func (q *Queries) CreateFun(ctx context.Context, arg CreateFunParams) error {
+	_, err := q.db.ExecContext(ctx, createFun,
+		arg.Idfun,
+		arg.Dsc,
+		arg.FunOn,
+		arg.FunOff,
+	)
+	return err
+}
+
+const createMsg = `-- name: CreateMsg :exec
+INSERT INTO msg (msg, dsc, dthr_ins, dthr_alt)
+VALUES ($1, $2, DEFAULT, DEFAULT)
+`
+
+type CreateMsgParams struct {
+	Msg int32
+	Dsc string
+}
+
+// -------------------msg-----------------------------
+func (q *Queries) CreateMsg(ctx context.Context, arg CreateMsgParams) error {
+	_, err := q.db.ExecContext(ctx, createMsg, arg.Msg, arg.Dsc)
+	return err
+}
+
+const createMsgPag = `-- name: CreateMsgPag :exec
+INSERT INTO msg_pag (msg, page, data, time_ms, active, dthr_ins, dthr_alt)
+VALUES ($1, $2, $3, $4, $5, DEFAULT, DEFAULT)
+`
+
+type CreateMsgPagParams struct {
+	Msg    int32
+	Page   int32
+	Data   string
+	TimeMs int32
+	Active int32
+}
+
+// -------------------msg_pag-----------------------------
+func (q *Queries) CreateMsgPag(ctx context.Context, arg CreateMsgPagParams) error {
+	_, err := q.db.ExecContext(ctx, createMsgPag,
+		arg.Msg,
+		arg.Page,
+		arg.Data,
+		arg.TimeMs,
+		arg.Active,
+	)
+	return err
+}
 
 const createPanel = `-- name: CreatePanel :one
 INSERT INTO panel (identifier, dscpanel, num_serie, active, ctrl_bright, dthr_ins, dthr_alt)
@@ -41,8 +140,25 @@ func (q *Queries) CreatePanel(ctx context.Context, arg CreatePanelParams) (int32
 	return idpanel, err
 }
 
+const createPanelStatus = `-- name: CreatePanelStatus :exec
+INSERT INTO panel_status (idstatus, idpanel, status, dthr_ins)
+VALUES ($1, $2, $3, DEFAULT)
+`
+
+type CreatePanelStatusParams struct {
+	Idstatus string
+	Idpanel  string
+	Status   string
+}
+
+// --------------------panel_status-----------------------------
+func (q *Queries) CreatePanelStatus(ctx context.Context, arg CreatePanelStatusParams) error {
+	_, err := q.db.ExecContext(ctx, createPanelStatus, arg.Idstatus, arg.Idpanel, arg.Status)
+	return err
+}
+
 const createSinc = `-- name: CreateSinc :one
-INSERT INTO sinc3 (idpanel, tag, data,  sinc)
+INSERT INTO sinc (idpanel, tag, data,  sinc)
 VALUES ($1, $2, $3, $4)
 RETURNING idsinc
 `
@@ -54,6 +170,7 @@ type CreateSincParams struct {
 	Sinc    int32
 }
 
+// ------------------sinc-------------------------------
 func (q *Queries) CreateSinc(ctx context.Context, arg CreateSincParams) (int32, error) {
 	row := q.db.QueryRowContext(ctx, createSinc,
 		arg.Idpanel,
@@ -64,6 +181,209 @@ func (q *Queries) CreateSinc(ctx context.Context, arg CreateSincParams) (int32, 
 	var idsinc int32
 	err := row.Scan(&idsinc)
 	return idsinc, err
+}
+
+const createUser = `-- name: CreateUser :one
+INSERT INTO users (iduser, name, login, pass, active, level, dthr_ins, dthr_alt)
+VALUES ($1, $2, $3, $4, $5, $6, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+RETURNING iduser
+`
+
+type CreateUserParams struct {
+	Iduser string
+	Name   string
+	Login  string
+	Pass   string
+	Active sql.NullInt32
+	Level  int32
+}
+
+// ------------------users-------------------------------
+func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (string, error) {
+	row := q.db.QueryRowContext(ctx, createUser,
+		arg.Iduser,
+		arg.Name,
+		arg.Login,
+		arg.Pass,
+		arg.Active,
+		arg.Level,
+	)
+	var iduser string
+	err := row.Scan(&iduser)
+	return iduser, err
+}
+
+const createUserLog = `-- name: CreateUserLog :exec
+INSERT INTO user_log (idlog, iduser, action, complete, dthr_ins)
+VALUES ($1, $2, $3, $4, DEFAULT)
+`
+
+type CreateUserLogParams struct {
+	Idlog    string
+	Iduser   string
+	Action   string
+	Complete string
+}
+
+// -----------------user_log-------------------------------
+func (q *Queries) CreateUserLog(ctx context.Context, arg CreateUserLogParams) error {
+	_, err := q.db.ExecContext(ctx, createUserLog,
+		arg.Idlog,
+		arg.Iduser,
+		arg.Action,
+		arg.Complete,
+	)
+	return err
+}
+
+const deleteUser = `-- name: DeleteUser :exec
+DELETE FROM users
+WHERE iduser = $1
+`
+
+func (q *Queries) DeleteUser(ctx context.Context, iduser string) error {
+	_, err := q.db.ExecContext(ctx, deleteUser, iduser)
+	return err
+}
+
+const getActiveUsers = `-- name: GetActiveUsers :many
+SELECT iduser, name, login, pass, active, level, dthr_ins, dthr_alt
+FROM users
+WHERE active = 1
+`
+
+func (q *Queries) GetActiveUsers(ctx context.Context) ([]User, error) {
+	rows, err := q.db.QueryContext(ctx, getActiveUsers)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []User
+	for rows.Next() {
+		var i User
+		if err := rows.Scan(
+			&i.Iduser,
+			&i.Name,
+			&i.Login,
+			&i.Pass,
+			&i.Active,
+			&i.Level,
+			&i.DthrIns,
+			&i.DthrAlt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getBrightLumById = `-- name: GetBrightLumById :one
+SELECT idlum, luminosity, bright, dthr_ins, dthr_alt
+FROM bright_lum
+WHERE idlum = $1
+`
+
+func (q *Queries) GetBrightLumById(ctx context.Context, idlum string) (BrightLum, error) {
+	row := q.db.QueryRowContext(ctx, getBrightLumById, idlum)
+	var i BrightLum
+	err := row.Scan(
+		&i.Idlum,
+		&i.Luminosity,
+		&i.Bright,
+		&i.DthrIns,
+		&i.DthrAlt,
+	)
+	return i, err
+}
+
+const getBrightTimeById = `-- name: GetBrightTimeById :one
+SELECT idtime, time, bright, dthr_ins, dthr_alt
+FROM bright_time
+WHERE idtime = $1
+`
+
+func (q *Queries) GetBrightTimeById(ctx context.Context, idtime string) (BrightTime, error) {
+	row := q.db.QueryRowContext(ctx, getBrightTimeById, idtime)
+	var i BrightTime
+	err := row.Scan(
+		&i.Idtime,
+		&i.Time,
+		&i.Bright,
+		&i.DthrIns,
+		&i.DthrAlt,
+	)
+	return i, err
+}
+
+const getFunById = `-- name: GetFunById :one
+SELECT idfun, dsc, fun_on, fun_off, dthr_ins, dthr_alt
+FROM fun
+WHERE idfun = $1
+`
+
+func (q *Queries) GetFunById(ctx context.Context, idfun string) (Fun, error) {
+	row := q.db.QueryRowContext(ctx, getFunById, idfun)
+	var i Fun
+	err := row.Scan(
+		&i.Idfun,
+		&i.Dsc,
+		&i.FunOn,
+		&i.FunOff,
+		&i.DthrIns,
+		&i.DthrAlt,
+	)
+	return i, err
+}
+
+const getMsgById = `-- name: GetMsgById :one
+SELECT msg, dsc, dthr_ins, dthr_alt
+FROM msg
+WHERE msg = $1
+`
+
+func (q *Queries) GetMsgById(ctx context.Context, msg int32) (Msg, error) {
+	row := q.db.QueryRowContext(ctx, getMsgById, msg)
+	var i Msg
+	err := row.Scan(
+		&i.Msg,
+		&i.Dsc,
+		&i.DthrIns,
+		&i.DthrAlt,
+	)
+	return i, err
+}
+
+const getMsgPagByMsgAndPage = `-- name: GetMsgPagByMsgAndPage :one
+SELECT msg, page, data, time_ms, active, dthr_ins, dthr_alt
+FROM msg_pag
+WHERE msg = $1 AND page = $2
+`
+
+type GetMsgPagByMsgAndPageParams struct {
+	Msg  int32
+	Page int32
+}
+
+func (q *Queries) GetMsgPagByMsgAndPage(ctx context.Context, arg GetMsgPagByMsgAndPageParams) (MsgPag, error) {
+	row := q.db.QueryRowContext(ctx, getMsgPagByMsgAndPage, arg.Msg, arg.Page)
+	var i MsgPag
+	err := row.Scan(
+		&i.Msg,
+		&i.Page,
+		&i.Data,
+		&i.TimeMs,
+		&i.Active,
+		&i.DthrIns,
+		&i.DthrAlt,
+	)
+	return i, err
 }
 
 const getPanelByIdentifier = `-- name: GetPanelByIdentifier :one
@@ -79,21 +399,39 @@ func (q *Queries) GetPanelByIdentifier(ctx context.Context, identifier string) (
 	return idpanel, err
 }
 
+const getPanelStatusById = `-- name: GetPanelStatusById :one
+SELECT idstatus, idpanel, status, dthr_ins
+FROM panel_status
+WHERE idstatus = $1
+`
+
+func (q *Queries) GetPanelStatusById(ctx context.Context, idstatus string) (PanelStatus, error) {
+	row := q.db.QueryRowContext(ctx, getPanelStatusById, idstatus)
+	var i PanelStatus
+	err := row.Scan(
+		&i.Idstatus,
+		&i.Idpanel,
+		&i.Status,
+		&i.DthrIns,
+	)
+	return i, err
+}
+
 const getSincsByPanelID = `-- name: GetSincsByPanelID :many
 SELECT idsinc, idpanel, tag, data, dthr_ins, sinc, dthr_sinc
-FROM sinc3
+FROM sinc
 WHERE idpanel = $1
 `
 
-func (q *Queries) GetSincsByPanelID(ctx context.Context, idpanel string) ([]Sinc3, error) {
+func (q *Queries) GetSincsByPanelID(ctx context.Context, idpanel string) ([]Sinc, error) {
 	rows, err := q.db.QueryContext(ctx, getSincsByPanelID, idpanel)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Sinc3
+	var items []Sinc
 	for rows.Next() {
-		var i Sinc3
+		var i Sinc
 		if err := rows.Scan(
 			&i.Idsinc,
 			&i.Idpanel,
@@ -114,6 +452,245 @@ func (q *Queries) GetSincsByPanelID(ctx context.Context, idpanel string) ([]Sinc
 		return nil, err
 	}
 	return items, nil
+}
+
+const getUserByID = `-- name: GetUserByID :one
+SELECT iduser, name, login, pass, active, level, dthr_ins, dthr_alt
+FROM users
+WHERE iduser = $1
+`
+
+func (q *Queries) GetUserByID(ctx context.Context, iduser string) (User, error) {
+	row := q.db.QueryRowContext(ctx, getUserByID, iduser)
+	var i User
+	err := row.Scan(
+		&i.Iduser,
+		&i.Name,
+		&i.Login,
+		&i.Pass,
+		&i.Active,
+		&i.Level,
+		&i.DthrIns,
+		&i.DthrAlt,
+	)
+	return i, err
+}
+
+const getUserByLoginAndPassword = `-- name: GetUserByLoginAndPassword :one
+SELECT iduser, name, login, pass, active, level, dthr_ins, dthr_alt
+FROM users
+WHERE login = $1 AND pass = $2
+`
+
+type GetUserByLoginAndPasswordParams struct {
+	Login string
+	Pass  string
+}
+
+func (q *Queries) GetUserByLoginAndPassword(ctx context.Context, arg GetUserByLoginAndPasswordParams) (User, error) {
+	row := q.db.QueryRowContext(ctx, getUserByLoginAndPassword, arg.Login, arg.Pass)
+	var i User
+	err := row.Scan(
+		&i.Iduser,
+		&i.Name,
+		&i.Login,
+		&i.Pass,
+		&i.Active,
+		&i.Level,
+		&i.DthrIns,
+		&i.DthrAlt,
+	)
+	return i, err
+}
+
+const getUserLogById = `-- name: GetUserLogById :one
+SELECT idlog, iduser, action, complete, dthr_ins
+FROM user_log
+WHERE idlog = $1
+`
+
+func (q *Queries) GetUserLogById(ctx context.Context, idlog string) (UserLog, error) {
+	row := q.db.QueryRowContext(ctx, getUserLogById, idlog)
+	var i UserLog
+	err := row.Scan(
+		&i.Idlog,
+		&i.Iduser,
+		&i.Action,
+		&i.Complete,
+		&i.DthrIns,
+	)
+	return i, err
+}
+
+const getUsersByLevel = `-- name: GetUsersByLevel :many
+SELECT iduser, name, login, pass, active, level, dthr_ins, dthr_alt
+FROM users
+WHERE level = $1
+`
+
+func (q *Queries) GetUsersByLevel(ctx context.Context, level int32) ([]User, error) {
+	rows, err := q.db.QueryContext(ctx, getUsersByLevel, level)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []User
+	for rows.Next() {
+		var i User
+		if err := rows.Scan(
+			&i.Iduser,
+			&i.Name,
+			&i.Login,
+			&i.Pass,
+			&i.Active,
+			&i.Level,
+			&i.DthrIns,
+			&i.DthrAlt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listUserLogs = `-- name: ListUserLogs :many
+SELECT idlog, iduser, action, complete, dthr_ins
+FROM user_log
+ORDER BY dthr_ins DESC
+`
+
+func (q *Queries) ListUserLogs(ctx context.Context) ([]UserLog, error) {
+	rows, err := q.db.QueryContext(ctx, listUserLogs)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []UserLog
+	for rows.Next() {
+		var i UserLog
+		if err := rows.Scan(
+			&i.Idlog,
+			&i.Iduser,
+			&i.Action,
+			&i.Complete,
+			&i.DthrIns,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const updateBrightLum = `-- name: UpdateBrightLum :exec
+UPDATE bright_lum
+SET luminosity = $2, bright = $3, dthr_alt = DEFAULT
+WHERE idlum = $1
+`
+
+type UpdateBrightLumParams struct {
+	Idlum      string
+	Luminosity int32
+	Bright     int32
+}
+
+func (q *Queries) UpdateBrightLum(ctx context.Context, arg UpdateBrightLumParams) error {
+	_, err := q.db.ExecContext(ctx, updateBrightLum, arg.Idlum, arg.Luminosity, arg.Bright)
+	return err
+}
+
+const updateBrightTime = `-- name: UpdateBrightTime :exec
+UPDATE bright_time
+SET time = $2, bright = $3, dthr_alt = DEFAULT
+WHERE idtime = $1
+`
+
+type UpdateBrightTimeParams struct {
+	Idtime string
+	Time   time.Time
+	Bright int32
+}
+
+func (q *Queries) UpdateBrightTime(ctx context.Context, arg UpdateBrightTimeParams) error {
+	_, err := q.db.ExecContext(ctx, updateBrightTime, arg.Idtime, arg.Time, arg.Bright)
+	return err
+}
+
+const updateFun = `-- name: UpdateFun :exec
+UPDATE fun
+SET dsc = $2, fun_on = $3, fun_off = $4, dthr_alt = DEFAULT
+WHERE idfun = $1
+`
+
+type UpdateFunParams struct {
+	Idfun  string
+	Dsc    string
+	FunOn  int32
+	FunOff int32
+}
+
+func (q *Queries) UpdateFun(ctx context.Context, arg UpdateFunParams) error {
+	_, err := q.db.ExecContext(ctx, updateFun,
+		arg.Idfun,
+		arg.Dsc,
+		arg.FunOn,
+		arg.FunOff,
+	)
+	return err
+}
+
+const updateMsg = `-- name: UpdateMsg :exec
+UPDATE msg
+SET dsc = $2, dthr_alt = DEFAULT
+WHERE msg = $1
+`
+
+type UpdateMsgParams struct {
+	Msg int32
+	Dsc string
+}
+
+func (q *Queries) UpdateMsg(ctx context.Context, arg UpdateMsgParams) error {
+	_, err := q.db.ExecContext(ctx, updateMsg, arg.Msg, arg.Dsc)
+	return err
+}
+
+const updateMsgPag = `-- name: UpdateMsgPag :exec
+UPDATE msg_pag
+SET data = $3, time_ms = $4, active = $5, dthr_alt = DEFAULT
+WHERE msg = $1 AND page = $2
+`
+
+type UpdateMsgPagParams struct {
+	Msg    int32
+	Page   int32
+	Data   string
+	TimeMs int32
+	Active int32
+}
+
+func (q *Queries) UpdateMsgPag(ctx context.Context, arg UpdateMsgPagParams) error {
+	_, err := q.db.ExecContext(ctx, updateMsgPag,
+		arg.Msg,
+		arg.Page,
+		arg.Data,
+		arg.TimeMs,
+		arg.Active,
+	)
+	return err
 }
 
 const updatePanel = `-- name: UpdatePanel :exec
@@ -145,8 +722,24 @@ func (q *Queries) UpdatePanel(ctx context.Context, arg UpdatePanelParams) error 
 	return err
 }
 
+const updatePanelStatus = `-- name: UpdatePanelStatus :exec
+UPDATE panel_status
+SET status = $2, dthr_ins = DEFAULT
+WHERE idstatus = $1
+`
+
+type UpdatePanelStatusParams struct {
+	Idstatus string
+	Status   string
+}
+
+func (q *Queries) UpdatePanelStatus(ctx context.Context, arg UpdatePanelStatusParams) error {
+	_, err := q.db.ExecContext(ctx, updatePanelStatus, arg.Idstatus, arg.Status)
+	return err
+}
+
 const updateSincStatus = `-- name: UpdateSincStatus :exec
-UPDATE sinc3
+UPDATE sinc
 SET sinc = $2, dthr_sinc = $3, data = $4
 WHERE idsinc = $1
 `
@@ -164,6 +757,33 @@ func (q *Queries) UpdateSincStatus(ctx context.Context, arg UpdateSincStatusPara
 		arg.Sinc,
 		arg.DthrSinc,
 		arg.Data,
+	)
+	return err
+}
+
+const updateUser = `-- name: UpdateUser :exec
+UPDATE users
+SET name = $2, login = $3, pass = $4, active = $5, level = $6, dthr_alt = CURRENT_TIMESTAMP
+WHERE iduser = $1
+`
+
+type UpdateUserParams struct {
+	Iduser string
+	Name   string
+	Login  string
+	Pass   string
+	Active sql.NullInt32
+	Level  int32
+}
+
+func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) error {
+	_, err := q.db.ExecContext(ctx, updateUser,
+		arg.Iduser,
+		arg.Name,
+		arg.Login,
+		arg.Pass,
+		arg.Active,
+		arg.Level,
 	)
 	return err
 }

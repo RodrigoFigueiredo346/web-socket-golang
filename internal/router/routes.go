@@ -9,12 +9,7 @@ import (
 //
 
 var Routes = []models.Routes{
-	{
-		URI:                   "/api/sub",
-		Function:              handlers.ApiSub,
-		Method:                []string{http.MethodPost},
-		RequireAuthentication: false,
-	},
+
 	{
 		URI:                   "/api/login",
 		Function:              handlers.Login,

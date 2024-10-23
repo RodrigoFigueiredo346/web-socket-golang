@@ -41,3 +41,12 @@ type Routes struct {
 	Function              func(http.ResponseWriter, *http.Request)
 	RequireAuthentication bool
 }
+
+type CreatePanelParamsModel struct {
+	Idpanel    string `json:"idpanel,omitempty"`
+	Identifier string `json:"identifier,omitempty"`
+	DscPanel   string `json:"dsc_panel,omitempty"`
+	NumSerie   string `json:"num_serie,omitempty"`
+	Active     int    `json:"active,omitempty"`
+	CtrlBright int    `json:"ctrl_bright,omitempty"`
+}

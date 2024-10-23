@@ -3,16 +3,89 @@ package services
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"main/internal/db"
+	"main/internal/models"
 	"main/internal/mqtt"
 	"main/sqlc"
-	"strconv"
 	"time"
-
-	"golang.org/x/exp/rand"
 )
+
+func (ws *WsService) editPanel(params interface{}, id int) (interface{}, error) {
+
+	/*
+		{
+			"method":"editPanel",
+			"params":[{
+				"idpanel": "122345678",
+				"identifier": "4654654",
+				"dscpanel":"PMV 01",
+				"num_serie":"123456",
+				"active":"1",
+				"ctrl_bright":"2"
+			}],
+			"id":12345
+		}
+
+	*/
+
+	start := time.Now()
+
+	type EditPanelParamsModel struct {
+		Idpanel    string `json:"idpanel"` // Único campo obrigatório
+		Identifier string `json:"identifier,omitempty"`
+		DscPanel   string `json:"dsc_panel,omitempty"`
+		NumSerie   string `json:"num_serie,omitempty"`
+		Active     int    `json:"active,omitempty"`
+		CtrlBright int    `json:"ctrl_bright,omitempty"`
+	}
+	var panelParams []EditPanelParamsModel
+
+	jsonData, err := json.Marshal(params)
+	if err != nil {
+		return nil, errors.New("failed to marshal params to JSON")
+	}
+
+	err = json.Unmarshal(jsonData, &panelParams)
+	if err != nil {
+		return nil, errors.New("invalid parameters: could not decode into models.EditPanelParamsModel")
+	}
+
+	panel := panelParams[0]
+	if panel.Idpanel == "" {
+		return nil, errors.New("idpanel is required for editing")
+	}
+
+	//TODO buscar os campos que não vieram na reuqisição na memória ou banco ou usar um db.Exec puro em UPDATES
+
+	dt := sqlc.New(db.DB)
+	err = dt.UpdatePanel(context.Background(), sqlc.UpdatePanelParams{
+		Idpanel:    panel.Idpanel,
+		Identifier: panel.Identifier,
+		DscPanel:   panel.DscPanel,
+		NumSerie:   panel.NumSerie,
+		Active:     sql.NullInt32{Int32: int32(panel.Active), Valid: true},
+		CtrlBright: DBInt32(int32(panel.CtrlBright)),
+		DthrAlt:    DBTime(time.Now()),
+	})
+	if err != nil {
+		return nil, errors.New("failed to update panel")
+	}
+
+	cache.Delete(string(panel.Identifier))
+	cache.Set(panel.Identifier, panel)
+	panelUpdated, _ := cache.Get(string(panel.Identifier))
+	if panelUpdated == nil {
+		return nil, errors.New("failed to update panel in memory")
+	}
+
+	fmt.Println("Updated panel", panel.Idpanel)
+	fmt.Println("Updated panel in time:", time.Since(start))
+
+	return 1, nil
+}
 
 func (ws *WsService) readPanelStatus(params interface{}, id int) (interface{}, error) {
 
@@ -33,12 +106,12 @@ func (ws *WsService) readPanelStatus(params interface{}, id int) (interface{}, e
 	fmt.Println("identifier", identifier)
 
 	mqtt.Publish(identifier, `{
-		"method": "getStatus",
-		"params": {
-			"token": "XXYYZZ"
-		},
-		"id": 12563
-	}`)
+				"method": "getStatus",
+				"params": {
+					"token": "XXYYZZ"
+				},
+				"id": 12563
+			}`)
 
 	// fmt.Println("Params: ", params)
 	// fmt.Println("paramSlice: ", paramSlice)
@@ -65,7 +138,6 @@ func (ws *WsService) readPanelStatus(params interface{}, id int) (interface{}, e
 	}
 
 	fmt.Println("idpanel: ", idpanel)
-	_ = strconv.Itoa(int(idpanel))
 
 	/*
 		salvo em sinc3
@@ -117,29 +189,55 @@ func (ws *WsService) readPanelStatus(params interface{}, id int) (interface{}, e
 }
 
 func (ws *WsService) createPanel(params interface{}, id int) (interface{}, error) {
-	// Verifica se params é um slice de interface
-	paramSlice, ok := params.([]interface{})
-	if !ok || len(paramSlice) == 0 {
-		return 0, errors.New("invalid parameters")
+	start := time.Now()
+	var panelParams []models.CreatePanelParamsModel
+
+	jsonData, err := json.Marshal(params)
+	if err != nil {
+		return nil, errors.New("failed to marshal params to JSON")
 	}
 
-	// Verifica se o primeiro item do slice é um mapa
-	paramMap, ok := paramSlice[0].(map[string]interface{})
-	if !ok {
-		return 0, errors.New("first parameter is not a map")
+	err = json.Unmarshal(jsonData, &panelParams)
+	if err != nil {
+		return nil, errors.New("invalid parameters: could not decode into models.CreatePanelParamsModel")
 	}
 
-	paramMap["id"] = rand.Intn(89999999) + 10000000
+	panel := panelParams[0]
 
-	identifier, ok := paramMap["identifier"].(string)
-	if !ok {
-		return 0, errors.New("identifier is not a string or missing")
+	//TODO validação dos campos - fazer um método pra isso??
+	if panel.Identifier == "" {
+		return nil, errors.New("identifier is required")
+	}
+	if panel.DscPanel == "" {
+		return nil, errors.New("dsc_panel is required")
+	}
+	if panel.Active < 0 || panel.Active > 1 {
+		return nil, errors.New("active must be 0 or 1")
+	}
+	if panel.CtrlBright < 1 || panel.CtrlBright > 2 {
+		return nil, errors.New("ctrl_bright must be 1 or 2")
 	}
 
-	cache.Set(identifier, paramMap)
+	cache.Set(panel.Identifier, panel)
+	panelCreated, _ := cache.Get(string(panel.Identifier))
+	if panelCreated == nil {
+		return nil, errors.New("failed to create panel in memory")
+	}
 
-	panelCreated, _ := cache.Get(string(identifier))
-	fmt.Println("Panel created:", panelCreated.(map[string]interface{})["identifier"])
+	dt := sqlc.New(db.DB)
+	idpanelCreated, err := dt.CreatePanel(context.Background(), sqlc.CreatePanelParams{
+		Identifier: panel.Identifier,
+		DscPanel:   panel.DscPanel,
+		NumSerie:   panel.NumSerie,
+		Active:     sql.NullInt32{Int32: int32(panel.Active), Valid: true},
+		CtrlBright: DBInt32(int32(panel.CtrlBright)),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	fmt.Println("Created panel", idpanelCreated)
+	fmt.Println("Created panel in time:", time.Since(start))
 
 	return 1, nil
 }

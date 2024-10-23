@@ -20,6 +20,7 @@ func NewWsService() *WsService {
 func (ws *WsService) registerMethods() {
 	ws.methods["readPanelStatus"] = ws.readPanelStatus
 	ws.methods["createPanel"] = ws.createPanel
+	ws.methods["editPanel"] = ws.editPanel
 	// Adicionar outros métodos aqui...
 }
 

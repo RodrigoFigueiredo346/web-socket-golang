@@ -52,9 +52,9 @@ type MsgPag struct {
 }
 
 type Panel struct {
-	Idpanel    int32
+	Idpanel    string
 	Identifier string
-	Dscpanel   string
+	DscPanel   string
 	NumSerie   string
 	Active     sql.NullInt32
 	CtrlBright sql.NullInt32

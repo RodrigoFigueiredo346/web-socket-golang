@@ -137,7 +137,7 @@ func processJsonRpc(request models.JsonRpcRequest) models.JsonRpcResponse {
 		return models.JsonRpcResponse{
 			Result: nil,
 			Error: &models.Error{
-				Code: errors.InternalServerError,
+				Code: errors.InvalidMethod,
 			},
 			ID: id,
 		}

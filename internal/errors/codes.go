@@ -36,7 +36,8 @@ const (
 const (
 	PermissionDenied        = -106 // Permissão negada
 	InvalidParameters       = -107 // Parâmetros inválidos
-	EmptyParameters         = -108 // Parâmetros vazios
+	EmptyParameters         = -110 // Parâmetros vazios
+	InvalidMethod           = -111 // Método inválido
 	InternalServerError     = -500 // Erro interno do servidor
 	InvalidRequestFormat    = -501 // Formato de requisição inválido
 	RequiredFieldsMissing   = -502 // Campos obrigatórios ausentes

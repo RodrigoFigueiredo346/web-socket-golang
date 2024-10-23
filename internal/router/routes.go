@@ -11,8 +11,8 @@ import (
 var Routes = []models.Routes{
 
 	{
-		URI:                   "/api/login",
-		Function:              handlers.Login,
+		URI:                   "/api/user",
+		Function:              handlers.User,
 		Method:                []string{http.MethodPost},
 		RequireAuthentication: false,
 	},
@@ -23,17 +23,17 @@ var Routes = []models.Routes{
 		RequireAuthentication: true,
 	},
 
-	{
-		URI:                   "/api/create-user",
-		Function:              handlers.CreateUser,
-		Method:                []string{http.MethodPost},
-		RequireAuthentication: true,
-	},
+	// {
+	// 	URI:                   "/api/create-user",
+	// 	Function:              handlers.CreateUser,
+	// 	Method:                []string{http.MethodPost},
+	// 	RequireAuthentication: true,
+	// },
 	// {
 	// 	URI:                   "/api/create-panel",
 	// 	Function:              handlers.CreatePanel,
-	// 	Method:                []string{http.MethodPost},
-	// 	RequireAuthentication: true,
+	// 	Method:               []string{http.MethodPost},
+	// 	Requi reAuthentication: true,
 	// },
 }
 

@@ -8,9 +8,13 @@ type JsonRpcRequest struct {
 	ID     int         `json:"id"`
 }
 
+type Error struct {
+	Code int `json:"code"`
+}
+
 type JsonRpcResponse struct {
-	Result interface{} `json:"result,omitempty"`
-	Error  interface{} `json:"error,omitempty"`
+	Result interface{} `json:"result"`
+	Error  *Error      `json:"error"`
 	ID     int         `json:"id"`
 }
 

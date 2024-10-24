@@ -4,14 +4,30 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 
 	"io"
 	"main/internal/db"
+	"main/internal/errors"
 	"main/internal/models"
 	"main/internal/services"
 	"main/sqlc"
 	"net/http"
+	"net/mail"
 )
+
+func isValidEmail(email string) models.Error {
+	_, err := mail.ParseAddress(email)
+	if err != nil {
+		return models.Error{
+			Code: errors.InvalidEmailFormat,
+		}
+	}
+
+	return models.Error{
+		Code: errors.NoError,
+	}
+}
 
 func User(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
@@ -47,11 +63,13 @@ func processJsonRpc(request models.JsonRpcRequest) models.JsonRpcResponse {
 	switch method {
 	case "login":
 		paramsList, ok := request.Params.([]interface{})
+		fmt.Println(paramsList)
 		if !ok || len(paramsList) == 0 {
+
 			return models.JsonRpcResponse{
 				Result: nil,
 				Error: &models.Error{
-					Code: -109,
+					Code: errors.EmptyParameters,
 				},
 				ID: id,
 			}
@@ -61,12 +79,35 @@ func processJsonRpc(request models.JsonRpcRequest) models.JsonRpcResponse {
 		if !ok {
 			return models.JsonRpcResponse{
 				Result: nil,
-				Error:  &models.Error{Code: -505},
+				Error: &models.Error{
+					Code: errors.InvalidRequestFormat,
+				},
+				ID: id,
+			}
+		}
+
+		if len(paramsData) != 2 {
+			return models.JsonRpcResponse{
+				Result: nil,
+				Error: &models.Error{
+					Code: errors.InvalidCredentials,
+				},
+			}
+		}
+
+		userEmail := paramsData["email"].(string)
+		emailErr := isValidEmail(userEmail)
+		if emailErr.Code != 0 {
+			return models.JsonRpcResponse{
+				Result: nil,
+				Error:  &emailErr,
 				ID:     id,
 			}
 		}
 
-		userId, err := userLogin(paramsData["email"].(string), paramsData["password"].(string))
+		userPass := paramsData["password"].(string)
+
+		userId, err := readUserData(userEmail, userPass)
 		if err.Code != 0 {
 			return models.JsonRpcResponse{
 				Result: nil,
@@ -79,8 +120,10 @@ func processJsonRpc(request models.JsonRpcRequest) models.JsonRpcResponse {
 		if tokenErr != nil {
 			return models.JsonRpcResponse{
 				Result: nil,
-				Error:  &models.Error{Code: -505},
-				ID:     id,
+				Error: &models.Error{
+					Code: errors.InternalServerError,
+				},
+				ID: id,
 			}
 		}
 
@@ -93,14 +136,16 @@ func processJsonRpc(request models.JsonRpcRequest) models.JsonRpcResponse {
 	default:
 		return models.JsonRpcResponse{
 			Result: nil,
-			Error:  &models.Error{Code: -505},
-			ID:     id,
+			Error: &models.Error{
+				Code: errors.InvalidMethod,
+			},
+			ID: id,
 		}
 
 	}
 }
 
-func userLogin(email string, password string) (string, models.Error) {
+func readUserData(email string, password string) (string, models.Error) {
 
 	dt := sqlc.New(db.DB)
 	ctx := context.Background()
@@ -113,19 +158,15 @@ func userLogin(email string, password string) (string, models.Error) {
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return "", models.Error{
-				Code: -109,
+				Code: errors.UserNotFound,
 			}
 		} else {
 			return "", models.Error{
-				Code: -505,
+				Code: errors.DatabaseConnectionError,
 			}
 		}
 	}
 	return user.Iduser, models.Error{
-		Code: 0,
+		Code: errors.NoError,
 	}
-}
-
-func createUser() int {
-	return 0
 }

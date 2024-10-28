@@ -1,8 +1,8 @@
 -- tabela de usuários
 create TABLE panel (
-    idpanel SERIAL PRIMARY KEY,
+    idpanel VARCHAR(50) PRIMARY KEY,
     identifier VARCHAR(50) NOT NULL,
-    dscpanel VARCHAR(50) NOT NULL,
+    dsc_panel VARCHAR(50) NOT NULL,
     num_serie VARCHAR(50) NOT NULL,
     active INT DEFAULT 1, 
     ctrl_bright INT DEFAULT 1, 
@@ -29,7 +29,7 @@ CREATE TABLE user_panel (
     name VARCHAR(10) NOT NULL,       -- Nome do usuário
     pass VARCHAR(10) NOT NULL,       -- Hash da senha do usuário
     active INT DEFAULT 1,            -- Estado ativo do usuário (1 = ativo, 0 = inativo)
-    dthr_ins TIMESTAMP DEFAULT CURRENT_TIMESTAMP,  -- Data/hora de inserção
+    dthr_ins TIMESTAMP DEFAULT CURRENT_TIMESTAMP,  
     dthr_alt TIMESTAMP DEFAULT CURRENT_TIMESTAMP  
 );
 

@@ -1,19 +1,18 @@
 -- name: CreatePanel :one
-INSERT INTO panel (identifier, dscpanel, num_serie, active, ctrl_bright, dthr_ins, dthr_alt)
-VALUES ($1, $2, $3, $4, $5, $6, $7)
+INSERT INTO panel (identifier, dsc_panel, num_serie, active, ctrl_bright )
+VALUES ($1, $2, $3, $4, $5)
 RETURNING idpanel;
 
 -- name: GetPanelByIdentifier :one
-SELECT idpanel --, identifier, dscpanel, num_serie, active, ctrl_bright, dthr_ins, dthr_alt
+SELECT idpanel --, identifier, dsc_panel, num_serie, active, ctrl_bright, dthr_ins, dthr_alt
 FROM panel
 WHERE identifier = $1;
 
 
 -- name: UpdatePanel :exec
 UPDATE panel
-SET identifier = $2, dscpanel = $3, num_serie = $4, active = $5, ctrl_bright = $6, dthr_alt = $7
+SET identifier = $2, dsc_panel = $3, num_serie = $4, active = $5, ctrl_bright = $6, dthr_alt = $7
 WHERE idpanel = $1;
-
 
 --------------------sinc-------------------------------
 -- name: CreateSinc :one
@@ -34,8 +33,8 @@ WHERE idsinc = $1;
 
 --------------------users-------------------------------
 -- name: CreateUser :one
-INSERT INTO users (iduser, name, login, pass, active, level, dthr_ins, dthr_alt)
-VALUES ($1, $2, $3, $4, $5, $6, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+INSERT INTO users (iduser, name, login, pass, active, level)
+VALUES ($1, $2, $3, $4, $5, $6)
 RETURNING iduser;
 
 -- name: UpdateUser :exec
@@ -69,8 +68,8 @@ WHERE login = $1 AND pass = $2;
 
 ----------------------panel_status-----------------------------
 -- name: CreatePanelStatus :exec
-INSERT INTO panel_status (idstatus, idpanel, status, dthr_ins)
-VALUES ($1, $2, $3, DEFAULT);
+INSERT INTO panel_status (idstatus, idpanel, status)
+VALUES ($1, $2, $3);
 
 -- name: GetPanelStatusById :one
 SELECT idstatus, idpanel, status, dthr_ins
@@ -85,8 +84,8 @@ WHERE idstatus = $1;
 
 --------------------bright_lum-----------------------------
 -- name: CreateBrightLum :exec
-INSERT INTO bright_lum (idlum, luminosity, bright, dthr_ins, dthr_alt)
-VALUES ($1, $2, $3, DEFAULT, DEFAULT);
+INSERT INTO bright_lum (idlum, luminosity, bright)
+VALUES ($1, $2, $3);
 
 -- name: GetBrightLumById :one
 SELECT idlum, luminosity, bright, dthr_ins, dthr_alt
@@ -101,8 +100,8 @@ WHERE idlum = $1;
 
 --------------------bright_time-----------------------------
 -- name: CreateBrightTime :exec
-INSERT INTO bright_time (idtime, time, bright, dthr_ins, dthr_alt)
-VALUES ($1, $2, $3, DEFAULT, DEFAULT);
+INSERT INTO bright_time (idtime, time, bright)
+VALUES ($1, $2, $3);
 
 -- name: GetBrightTimeById :one
 SELECT idtime, time, bright, dthr_ins, dthr_alt
@@ -117,8 +116,8 @@ WHERE idtime = $1;
 
 ---------------------msg-----------------------------
 -- name: CreateMsg :exec
-INSERT INTO msg (msg, dsc, dthr_ins, dthr_alt)
-VALUES ($1, $2, DEFAULT, DEFAULT);
+INSERT INTO msg (msg, dsc)
+VALUES ($1, $2);
 
 -- name: GetMsgById :one
 SELECT msg, dsc, dthr_ins, dthr_alt
@@ -133,8 +132,8 @@ WHERE msg = $1;
 
 ---------------------msg_pag-----------------------------
 -- name: CreateMsgPag :exec
-INSERT INTO msg_pag (msg, page, data, time_ms, active, dthr_ins, dthr_alt)
-VALUES ($1, $2, $3, $4, $5, DEFAULT, DEFAULT);
+INSERT INTO msg_pag (msg, page, data, time_ms, active)
+VALUES ($1, $2, $3, $4, $5);
 
 -- name: GetMsgPagByMsgAndPage :one
 SELECT msg, page, data, time_ms, active, dthr_ins, dthr_alt
@@ -150,8 +149,8 @@ WHERE msg = $1 AND page = $2;
 
 -------------------fun-------------------------------
 -- name: CreateFun :exec
-INSERT INTO fun (idfun, dsc, fun_on, fun_off, dthr_ins, dthr_alt)
-VALUES ($1, $2, $3, $4, DEFAULT, DEFAULT);
+INSERT INTO fun (idfun, dsc, fun_on, fun_off)
+VALUES ($1, $2, $3, $4);
 
 -- name: GetFunById :one
 SELECT idfun, dsc, fun_on, fun_off, dthr_ins, dthr_alt
@@ -167,8 +166,8 @@ WHERE idfun = $1;
 
 -------------------user_log-------------------------------
 -- name: CreateUserLog :exec
-INSERT INTO user_log (idlog, iduser, action, complete, dthr_ins)
-VALUES ($1, $2, $3, $4, DEFAULT);
+INSERT INTO user_log (idlog, iduser, action, complete)
+VALUES ($1, $2, $3, $4);
 
 -- name: GetUserLogById :one
 SELECT idlog, iduser, action, complete, dthr_ins

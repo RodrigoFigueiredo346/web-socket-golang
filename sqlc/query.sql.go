@@ -12,8 +12,8 @@ import (
 )
 
 const createBrightLum = `-- name: CreateBrightLum :exec
-INSERT INTO bright_lum (idlum, luminosity, bright, dthr_ins, dthr_alt)
-VALUES ($1, $2, $3, DEFAULT, DEFAULT)
+INSERT INTO bright_lum (idlum, luminosity, bright)
+VALUES ($1, $2, $3)
 `
 
 type CreateBrightLumParams struct {
@@ -29,8 +29,8 @@ func (q *Queries) CreateBrightLum(ctx context.Context, arg CreateBrightLumParams
 }
 
 const createBrightTime = `-- name: CreateBrightTime :exec
-INSERT INTO bright_time (idtime, time, bright, dthr_ins, dthr_alt)
-VALUES ($1, $2, $3, DEFAULT, DEFAULT)
+INSERT INTO bright_time (idtime, time, bright)
+VALUES ($1, $2, $3)
 `
 
 type CreateBrightTimeParams struct {
@@ -46,8 +46,8 @@ func (q *Queries) CreateBrightTime(ctx context.Context, arg CreateBrightTimePara
 }
 
 const createFun = `-- name: CreateFun :exec
-INSERT INTO fun (idfun, dsc, fun_on, fun_off, dthr_ins, dthr_alt)
-VALUES ($1, $2, $3, $4, DEFAULT, DEFAULT)
+INSERT INTO fun (idfun, dsc, fun_on, fun_off)
+VALUES ($1, $2, $3, $4)
 `
 
 type CreateFunParams struct {
@@ -69,8 +69,8 @@ func (q *Queries) CreateFun(ctx context.Context, arg CreateFunParams) error {
 }
 
 const createMsg = `-- name: CreateMsg :exec
-INSERT INTO msg (msg, dsc, dthr_ins, dthr_alt)
-VALUES ($1, $2, DEFAULT, DEFAULT)
+INSERT INTO msg (msg, dsc)
+VALUES ($1, $2)
 `
 
 type CreateMsgParams struct {
@@ -85,8 +85,8 @@ func (q *Queries) CreateMsg(ctx context.Context, arg CreateMsgParams) error {
 }
 
 const createMsgPag = `-- name: CreateMsgPag :exec
-INSERT INTO msg_pag (msg, page, data, time_ms, active, dthr_ins, dthr_alt)
-VALUES ($1, $2, $3, $4, $5, DEFAULT, DEFAULT)
+INSERT INTO msg_pag (msg, page, data, time_ms, active)
+VALUES ($1, $2, $3, $4, $5)
 `
 
 type CreateMsgPagParams struct {
@@ -110,39 +110,35 @@ func (q *Queries) CreateMsgPag(ctx context.Context, arg CreateMsgPagParams) erro
 }
 
 const createPanel = `-- name: CreatePanel :one
-INSERT INTO panel (identifier, dscpanel, num_serie, active, ctrl_bright, dthr_ins, dthr_alt)
-VALUES ($1, $2, $3, $4, $5, $6, $7)
+INSERT INTO panel (identifier, dsc_panel, num_serie, active, ctrl_bright )
+VALUES ($1, $2, $3, $4, $5)
 RETURNING idpanel
 `
 
 type CreatePanelParams struct {
 	Identifier string
-	Dscpanel   string
+	DscPanel   string
 	NumSerie   string
 	Active     sql.NullInt32
 	CtrlBright sql.NullInt32
-	DthrIns    sql.NullTime
-	DthrAlt    sql.NullTime
 }
 
-func (q *Queries) CreatePanel(ctx context.Context, arg CreatePanelParams) (int32, error) {
+func (q *Queries) CreatePanel(ctx context.Context, arg CreatePanelParams) (string, error) {
 	row := q.db.QueryRowContext(ctx, createPanel,
 		arg.Identifier,
-		arg.Dscpanel,
+		arg.DscPanel,
 		arg.NumSerie,
 		arg.Active,
 		arg.CtrlBright,
-		arg.DthrIns,
-		arg.DthrAlt,
 	)
-	var idpanel int32
+	var idpanel string
 	err := row.Scan(&idpanel)
 	return idpanel, err
 }
 
 const createPanelStatus = `-- name: CreatePanelStatus :exec
-INSERT INTO panel_status (idstatus, idpanel, status, dthr_ins)
-VALUES ($1, $2, $3, DEFAULT)
+INSERT INTO panel_status (idstatus, idpanel, status)
+VALUES ($1, $2, $3)
 `
 
 type CreatePanelStatusParams struct {
@@ -184,8 +180,8 @@ func (q *Queries) CreateSinc(ctx context.Context, arg CreateSincParams) (int32, 
 }
 
 const createUser = `-- name: CreateUser :one
-INSERT INTO users (iduser, name, login, pass, active, level, dthr_ins, dthr_alt)
-VALUES ($1, $2, $3, $4, $5, $6, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+INSERT INTO users (iduser, name, login, pass, active, level)
+VALUES ($1, $2, $3, $4, $5, $6)
 RETURNING iduser
 `
 
@@ -214,8 +210,8 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (string,
 }
 
 const createUserLog = `-- name: CreateUserLog :exec
-INSERT INTO user_log (idlog, iduser, action, complete, dthr_ins)
-VALUES ($1, $2, $3, $4, DEFAULT)
+INSERT INTO user_log (idlog, iduser, action, complete)
+VALUES ($1, $2, $3, $4)
 `
 
 type CreateUserLogParams struct {
@@ -387,14 +383,14 @@ func (q *Queries) GetMsgPagByMsgAndPage(ctx context.Context, arg GetMsgPagByMsgA
 }
 
 const getPanelByIdentifier = `-- name: GetPanelByIdentifier :one
-SELECT idpanel --, identifier, dscpanel, num_serie, active, ctrl_bright, dthr_ins, dthr_alt
+SELECT idpanel --, identifier, dsc_panel, num_serie, active, ctrl_bright, dthr_ins, dthr_alt
 FROM panel
 WHERE identifier = $1
 `
 
-func (q *Queries) GetPanelByIdentifier(ctx context.Context, identifier string) (int32, error) {
+func (q *Queries) GetPanelByIdentifier(ctx context.Context, identifier string) (string, error) {
 	row := q.db.QueryRowContext(ctx, getPanelByIdentifier, identifier)
-	var idpanel int32
+	var idpanel string
 	err := row.Scan(&idpanel)
 	return idpanel, err
 }
@@ -695,14 +691,14 @@ func (q *Queries) UpdateMsgPag(ctx context.Context, arg UpdateMsgPagParams) erro
 
 const updatePanel = `-- name: UpdatePanel :exec
 UPDATE panel
-SET identifier = $2, dscpanel = $3, num_serie = $4, active = $5, ctrl_bright = $6, dthr_alt = $7
+SET identifier = $2, dsc_panel = $3, num_serie = $4, active = $5, ctrl_bright = $6, dthr_alt = $7
 WHERE idpanel = $1
 `
 
 type UpdatePanelParams struct {
-	Idpanel    int32
+	Idpanel    string
 	Identifier string
-	Dscpanel   string
+	DscPanel   string
 	NumSerie   string
 	Active     sql.NullInt32
 	CtrlBright sql.NullInt32
@@ -713,7 +709,7 @@ func (q *Queries) UpdatePanel(ctx context.Context, arg UpdatePanelParams) error 
 	_, err := q.db.ExecContext(ctx, updatePanel,
 		arg.Idpanel,
 		arg.Identifier,
-		arg.Dscpanel,
+		arg.DscPanel,
 		arg.NumSerie,
 		arg.Active,
 		arg.CtrlBright,

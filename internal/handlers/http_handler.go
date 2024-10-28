@@ -10,24 +10,11 @@ import (
 	"main/internal/db"
 	"main/internal/errors"
 	"main/internal/models"
+	"main/internal/security"
 	"main/internal/services"
 	"main/sqlc"
 	"net/http"
-	"net/mail"
 )
-
-func isValidEmail(email string) models.Error {
-	_, err := mail.ParseAddress(email)
-	if err != nil {
-		return models.Error{
-			Code: errors.InvalidEmailFormat,
-		}
-	}
-
-	return models.Error{
-		Code: errors.NoError,
-	}
-}
 
 func User(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
@@ -96,7 +83,7 @@ func processJsonRpc(request models.JsonRpcRequest) models.JsonRpcResponse {
 		}
 
 		userEmail := paramsData["email"].(string)
-		emailErr := isValidEmail(userEmail)
+		emailErr := security.ValidateEmail(userEmail)
 		if emailErr.Code != 0 {
 			return models.JsonRpcResponse{
 				Result: nil,

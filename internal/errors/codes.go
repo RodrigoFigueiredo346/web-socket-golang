@@ -1,46 +1,50 @@
 package errors
 
-// Códigos de erro relacionados a credenciais
 const (
-	NoError                = 0     // sucesso
-	InvalidCredentials     = -101  // Credenciais inválidas
-	InvalidEmailFormat     = -1010 // Formato de email inválido
-	PasswordTooShort       = -1011 // Senha muito curta
-	PasswordMissingSpecial = -1012 // Falta caractere especial na senha
-	PasswordMissingNumber  = -1013 // Falta número na senha
-	PasswordMissingUpper   = -1014 // Falta letra maiúscula na senha
-	PasswordMissingLower   = -1015 // Falta letra minúscula na senha
+	NoError = 0 // sucesso
 )
 
-// Códigos de erro relacionados a usuário
+// Códigos de erro relacionados a credenciais range -101
 const (
-	UserLocked     = -102 // Usuário bloqueado
-	UserNotFound   = -109 // Usuário não encontrado
-	UserInactive   = -503 // Usuário inativo
-	DuplicateEntry = -504 // Entrada duplicada
+	InvalidCredentials     = -1010 // Credenciais inválidas
+	InvalidEmailFormat     = -1011 // Formato de email inválido
+	PasswordTooShort       = -1012 // Senha muito curta
+	PasswordMissingSpecial = -1013 // Falta caractere especial na senha
+	PasswordMissingNumber  = -1014 // Falta número na senha
+	PasswordMissingUpper   = -1015 // Falta letra maiúscula na senha
+	PasswordMissingLower   = -1016 // Falta letra minúscula na senha
+	PasswordNotMatch       = -1017 // Password incorreto
 )
 
-// Códigos de erro relacionados a sessão
+// Códigos de erro relacionados a usuário range -102
 const (
-	InvalidToken    = -103 // Token inválido
-	SessionNotFound = -104 // Sessão não encontrada
+	UserLocked     = -1020 // Usuário bloqueado
+	UserNotFound   = -1021 // Usuário não encontrado
+	UserInactive   = -1022 // Usuário inativo
+	DuplicateEntry = -1023 // Entrada duplicada
 )
 
-// Códigos de erro relacionados a painel
+// Códigos de erro relacionados a sessão range -103
 const (
-	PanelNotFound      = -105 // Painel não encontrado
-	PanelAlreadyExists = -108 // Painel já existe
+	InvalidToken    = -1030 // Token inválido
+	SessionNotFound = -1031 // Sessão não encontrada
 )
 
-// Códigos de erro gerais
+// Códigos de erro relacionados a painel range -104
 const (
-	PermissionDenied        = -106 // Permissão negada
-	InvalidParameters       = -107 // Parâmetros inválidos
-	EmptyParameters         = -110 // Parâmetros vazios
-	InvalidMethod           = -111 // Método inválido
-	InternalServerError     = -500 // Erro interno do servidor
-	InvalidRequestFormat    = -501 // Formato de requisição inválido
-	RequiredFieldsMissing   = -502 // Campos obrigatórios ausentes
-	DatabaseConnectionError = -505 // Erro de conexão com o banco de dados
-	UnauthorizedAction      = -506 // Ação não autorizada
+	PanelNotFound      = -1040 // Painel não encontrado
+	PanelAlreadyExists = -1041 // Painel já existe
+)
+
+// Códigos de erro gerais range -50
+const (
+	PermissionDenied        = -501 // Permissão negada
+	InvalidParameters       = -502 // Parâmetros inválidos
+	EmptyParameters         = -503 // Parâmetros vazios
+	InvalidMethod           = -504 // Método inválido
+	InternalServerError     = -505 // Erro interno do servidor
+	InvalidRequestFormat    = -506 // Formato de requisição inválido
+	RequiredFieldsMissing   = -507 // Campos obrigatórios ausentes
+	DatabaseConnectionError = -508 // Erro de conexão com o banco de dados
+	UnauthorizedAction      = -509 // Ação não autorizada
 )

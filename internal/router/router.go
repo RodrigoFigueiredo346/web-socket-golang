@@ -1,6 +1,7 @@
 package router
 
 import (
+	"fmt"
 	"main/internal/middleware"
 	"main/internal/models"
 	"net/http"
@@ -9,6 +10,7 @@ import (
 )
 
 func GeneratRoutes() *mux.Router {
+	fmt.Println("Generating routes...")
 
 	r := mux.NewRouter()
 	r.Use(enableCORS)
@@ -35,13 +37,15 @@ func GeneratRoutes() *mux.Router {
 // Middleware para habilitar CORS
 func enableCORS(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Println("CORS middleware called")
 		w.Header().Set("Access-Control-Allow-Origin", "*") // Permitir todas as origens
 		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 
 		// Se for uma requisição OPTIONS (preflight), responde diretamente
 		if r.Method == http.MethodOptions {
-			w.WriteHeader(http.StatusOK)
+			fmt.Println(r.Method)
+			w.WriteHeader(http.StatusNoContent)
 			return
 		}
 

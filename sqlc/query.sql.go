@@ -280,6 +280,43 @@ func (q *Queries) GetActiveUsers(ctx context.Context) ([]User, error) {
 	return items, nil
 }
 
+const getAllPanels = `-- name: GetAllPanels :many
+SELECT idpanel, identifier, dsc_panel, num_serie, active, ctrl_bright, dthr_ins, dthr_alt
+FROM panel
+`
+
+func (q *Queries) GetAllPanels(ctx context.Context) ([]Panel, error) {
+	rows, err := q.db.QueryContext(ctx, getAllPanels)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Panel
+	for rows.Next() {
+		var i Panel
+		if err := rows.Scan(
+			&i.Idpanel,
+			&i.Identifier,
+			&i.DscPanel,
+			&i.NumSerie,
+			&i.Active,
+			&i.CtrlBright,
+			&i.DthrIns,
+			&i.DthrAlt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getBrightLumById = `-- name: GetBrightLumById :one
 SELECT idlum, luminosity, bright, dthr_ins, dthr_alt
 FROM bright_lum

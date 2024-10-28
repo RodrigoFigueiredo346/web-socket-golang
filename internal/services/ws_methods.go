@@ -13,23 +13,34 @@ import (
 	"time"
 )
 
+func init() {
+	// readAllPanels()
+}
+
+func readAllPanels() {
+	// 	ctx := context.Background()
+	// 	dt := sqlc.New(db.DB)
+	// 	allpanels, err := dt.GetAllPanels(ctx)
+	// 	if err != nil {
+	// 		log.Println(err)
+	// 	}
+	// 	fmt.Println(allpanels)
+}
+
 func (ws *WsService) editPanel(params interface{}, id int) (interface{}, error) {
 
-	/*
-		{
-			"method":"editPanel",
-			"params":[{
-				"idpanel": "122345678",
-				"identifier": "4654654",
-				"dscpanel":"PMV 01",
-				"num_serie":"123456",
-				"active":"1",
-				"ctrl_bright":"2"
-			}],
-			"id":12345
-		}
-
-	*/
+	/*{
+	"method":"editPanel",
+	"params":[{
+		"idpanel": "122345678",
+		"identifier": "4654654",
+		"dscpanel":"PMV 01",
+		"num_serie":"123456",
+		"active":"1",
+		"ctrl_bright":"2"
+	}],
+	"id":12345
+	}*/
 
 	start := time.Now()
 
@@ -281,25 +292,4 @@ func (ws *WsService) activateMsg(params interface{}, id int) (interface{}, error
 	}`)
 
 	return 1, nil
-}
-
-func DBString(s string) sql.NullString {
-	if s == "" {
-		return sql.NullString{}
-	}
-	return sql.NullString{String: s, Valid: true}
-}
-
-func DBInt32(i int32) sql.NullInt32 {
-	if i == 0 {
-		return sql.NullInt32{}
-	}
-	return sql.NullInt32{Int32: i, Valid: true}
-}
-
-func DBTime(t time.Time) sql.NullTime {
-	if t.IsZero() {
-		return sql.NullTime{}
-	}
-	return sql.NullTime{Time: t, Valid: true}
 }

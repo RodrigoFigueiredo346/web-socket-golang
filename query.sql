@@ -1,3 +1,8 @@
+-- name: GetAllPanels :many
+SELECT idpanel, identifier, dsc_panel, num_serie, active, ctrl_bright, dthr_ins, dthr_alt
+FROM panel;
+
+
 -- name: CreatePanel :one
 INSERT INTO panel (identifier, dsc_panel, num_serie, active, ctrl_bright )
 VALUES ($1, $2, $3, $4, $5)

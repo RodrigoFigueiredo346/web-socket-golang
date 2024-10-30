@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"main/internal/db"
 	"main/internal/models"
 	"main/internal/mqtt"
@@ -13,18 +14,60 @@ import (
 	"time"
 )
 
-func init() {
-	// readAllPanels()
+func LoadPanelsInMemo() {
+	start := time.Now()
+	ctx := context.Background()
+	dt := sqlc.New(db.DB)
+	allPanels, err := dt.GetAllPanels(ctx)
+	if err != nil {
+		log.Println(err)
+	}
+
+	//var panelModels []models.PanelModel
+	for _, panel := range allPanels {
+		panelModel := models.PanelModel{
+			IDPanel:    panel.Idpanel,
+			Identifier: panel.Identifier,
+			DscPanel:   panel.DscPanel,
+			NumSerie:   panel.NumSerie,
+			Active:     int(panel.Active.Int32),
+			CtrlBright: int(panel.CtrlBright.Int32),
+		}
+		//panelModels = append(panelModels, panelModel)
+
+		cache.Set(panel.Idpanel, panelModel)
+
+	}
+	fmt.Println("paineis carregados do banco em: ", time.Since(start))
+
 }
 
-func readAllPanels() {
-	// 	ctx := context.Background()
-	// 	dt := sqlc.New(db.DB)
-	// 	allpanels, err := dt.GetAllPanels(ctx)
-	// 	if err != nil {
-	// 		log.Println(err)
-	// 	}
-	// 	fmt.Println(allpanels)
+func (ws *WsService) readPanels(params interface{}, id int) (interface{}, error) {
+
+	panels := cache.GetAll()
+
+	var panelModels []models.PanelModel
+	for _, panel := range panels {
+		fmt.Println(panel.(models.PanelModel))
+		panelMap, ok := panel.(models.PanelModel)
+		if !ok {
+			fmt.Println("Formato de painel inválido")
+			continue
+		}
+
+		panelModel := models.PanelModel{
+			IDPanel:    panelMap.IDPanel,
+			Identifier: panelMap.Identifier,
+			DscPanel:   panelMap.DscPanel,
+			NumSerie:   panelMap.NumSerie,
+			Active:     panelMap.Active,
+			CtrlBright: panelMap.CtrlBright,
+		}
+
+		panelModels = append(panelModels, panelModel)
+	}
+
+	return panelModels, nil
 }
 
 func (ws *WsService) editPanel(params interface{}, id int) (interface{}, error) {
@@ -42,17 +85,15 @@ func (ws *WsService) editPanel(params interface{}, id int) (interface{}, error) 
 	"id":12345
 	}*/
 
-	start := time.Now()
-
-	type EditPanelParamsModel struct {
-		Idpanel    string `json:"idpanel"` // Único campo obrigatório
-		Identifier string `json:"identifier,omitempty"`
-		DscPanel   string `json:"dsc_panel,omitempty"`
-		NumSerie   string `json:"num_serie,omitempty"`
-		Active     int    `json:"active,omitempty"`
-		CtrlBright int    `json:"ctrl_bright,omitempty"`
-	}
-	var panelParams []EditPanelParamsModel
+	// type EditPanelParamsModel struct {
+	// 	IDPanel    string `json:"idpanel"` // Único campo obrigatório
+	// 	Identifier string `json:"identifier,omitempty"`
+	// 	DscPanel   string `json:"dsc_panel,omitempty"`
+	// 	NumSerie   string `json:"num_serie,omitempty"`
+	// 	Active     int    `json:"active,omitempty"`
+	// 	CtrlBright int    `json:"ctrl_bright,omitempty"`
+	// }
+	var panelParams []models.PanelModel
 
 	jsonData, err := json.Marshal(params)
 	if err != nil {
@@ -65,15 +106,15 @@ func (ws *WsService) editPanel(params interface{}, id int) (interface{}, error) 
 	}
 
 	panel := panelParams[0]
-	if panel.Idpanel == "" {
+	if panel.IDPanel == "" {
 		return nil, errors.New("idpanel is required for editing")
 	}
 
-	//TODO buscar os campos que não vieram na reuqisição na memória ou banco ou usar um db.Exec puro em UPDATES
+	//TODO buscar os campos que não vieram na requisição na memória ou banco ou usar um db.Exec puro em UPDATES
 
 	dt := sqlc.New(db.DB)
 	err = dt.UpdatePanel(context.Background(), sqlc.UpdatePanelParams{
-		Idpanel:    panel.Idpanel,
+		Idpanel:    panel.IDPanel,
 		Identifier: panel.Identifier,
 		DscPanel:   panel.DscPanel,
 		NumSerie:   panel.NumSerie,
@@ -85,15 +126,11 @@ func (ws *WsService) editPanel(params interface{}, id int) (interface{}, error) 
 		return nil, errors.New("failed to update panel")
 	}
 
-	cache.Delete(string(panel.Identifier))
-	cache.Set(panel.Identifier, panel)
-	panelUpdated, _ := cache.Get(string(panel.Identifier))
+	cache.Set(panel.IDPanel, panel)
+	panelUpdated, _ := cache.Get(string(panel.IDPanel))
 	if panelUpdated == nil {
 		return nil, errors.New("failed to update panel in memory")
 	}
-
-	fmt.Println("Updated panel", panel.Idpanel)
-	fmt.Println("Updated panel in time:", time.Since(start))
 
 	return 1, nil
 }
@@ -201,7 +238,7 @@ func (ws *WsService) readPanelStatus(params interface{}, id int) (interface{}, e
 
 func (ws *WsService) createPanel(params interface{}, id int) (interface{}, error) {
 	start := time.Now()
-	var panelParams []models.CreatePanelParamsModel
+	var panelParams []models.PanelModel
 
 	jsonData, err := json.Marshal(params)
 	if err != nil {
@@ -229,12 +266,6 @@ func (ws *WsService) createPanel(params interface{}, id int) (interface{}, error
 		return nil, errors.New("ctrl_bright must be 1 or 2")
 	}
 
-	cache.Set(panel.Identifier, panel)
-	panelCreated, _ := cache.Get(string(panel.Identifier))
-	if panelCreated == nil {
-		return nil, errors.New("failed to create panel in memory")
-	}
-
 	dt := sqlc.New(db.DB)
 	idpanelCreated, err := dt.CreatePanel(context.Background(), sqlc.CreatePanelParams{
 		Identifier: panel.Identifier,
@@ -245,6 +276,16 @@ func (ws *WsService) createPanel(params interface{}, id int) (interface{}, error
 	})
 	if err != nil {
 		return nil, err
+	}
+
+	panel.IDPanel = idpanelCreated
+
+	//TODO se falhar no cache mas já ter sido salvo no banco???
+	cache.Set(panel.IDPanel, panel)
+	fmt.Println("Created panel:", panel)
+	panelCreated, _ := cache.Get(string(panel.IDPanel))
+	if panelCreated == nil {
+		return nil, errors.New("failed to create panel in memory")
 	}
 
 	fmt.Println("Created panel", idpanelCreated)

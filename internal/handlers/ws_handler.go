@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"main/internal/errors"
 	"main/internal/models"
 	"main/internal/mqtt"
 	"main/internal/services"
@@ -65,31 +66,41 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		messageStr := string(message)
-		messageStr = strings.ReplaceAll(messageStr, "“", "\"")
+		messageStr := strings.ReplaceAll(string(message), "“", "\"")
 		messageStr = strings.ReplaceAll(messageStr, "”", "\"")
 
 		fmt.Printf("Received message: %s\n", messageStr)
 
 		var request models.JsonRpcRequest
-
 		if err := json.Unmarshal([]byte(messageStr), &request); err != nil {
 			log.Printf("Error decoding JSON-RPC: %v\n", err)
-			conn.WriteMessage(websocket.TextMessage, []byte("Invalid request..."))
-			continue
+			return
 		}
-		var response string
 		res, err := ws.HandleRequest(request.Method, request.Params, request.ID)
-		if err != nil {
-			log.Println(err)
-			response = fmt.Sprintf(`{"error":"%v","id":%d}`, err, request.ID)
 
+		var response models.JsonRpcResponse
+		if err != nil {
+			response = models.JsonRpcResponse{
+				Result: nil,
+				Error:  &models.Error{Code: errors.ErrorConvertingJSON},
+				ID:     request.ID,
+			}
 		} else {
-			response = fmt.Sprintf(`{"result":"%v","id":%d}`, res, request.ID)
+			response = models.JsonRpcResponse{
+				Result: res,
+				Error:  nil,
+				ID:     request.ID,
+			}
 		}
 
-		err = conn.WriteMessage(websocket.TextMessage, []byte(response))
+		jsonResponse, err := json.Marshal(response)
+		fmt.Println("panelModel: ", string(jsonResponse))
+		if err != nil {
+			log.Println("Error encoding response JSON:", err)
+			return
+		}
 
+		err = conn.WriteMessage(websocket.TextMessage, jsonResponse)
 		if err != nil {
 			log.Println(err)
 			return

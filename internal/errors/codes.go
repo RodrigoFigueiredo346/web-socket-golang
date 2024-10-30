@@ -47,4 +47,5 @@ const (
 	RequiredFieldsMissing   = -507 // Campos obrigatórios ausentes
 	DatabaseConnectionError = -508 // Erro de conexão com o banco de dados
 	UnauthorizedAction      = -509 // Ação não autorizada
+	ErrorConvertingJSON     = -510 // Erro na conversão de JSON
 )

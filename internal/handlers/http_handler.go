@@ -4,8 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"fmt"
-	"log"
 
 	"io"
 	"main/internal/db"
@@ -18,7 +16,7 @@ import (
 )
 
 func User(w http.ResponseWriter, r *http.Request) {
-	log.Println("User called")
+
 	w.Header().Set("Content-Type", "application/json")
 
 	body, err := io.ReadAll(r.Body)
@@ -53,8 +51,7 @@ func processJsonRpc(request models.JsonRpcRequest) models.JsonRpcResponse {
 	switch method {
 	case "login":
 		paramsList, ok := request.Params.([]interface{})
-		fmt.Println(paramsList)
-		if !ok || len(paramsList) == 0 {			
+		if !ok || len(paramsList) == 0 {
 			return models.JsonRpcResponse{
 				Result: nil,
 				Error: &models.Error{
@@ -95,7 +92,6 @@ func processJsonRpc(request models.JsonRpcRequest) models.JsonRpcResponse {
 		}
 
 		userPass := paramsData["password"].(string)
-
 		userId, err := readUserData(userEmail, userPass)
 		if err.Code != 0 {
 			return models.JsonRpcResponse{
@@ -138,7 +134,6 @@ func readUserData(email string, password string) (string, models.Error) {
 
 	dt := sqlc.New(db.DB)
 	ctx := context.Background()
-	fmt.Println(email)
 
 	user, err := dt.GetUserByLoginAndPassword(ctx, sqlc.GetUserByLoginAndPasswordParams{
 		Login: email,

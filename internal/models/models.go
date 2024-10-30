@@ -19,13 +19,13 @@ type JsonRpcResponse struct {
 }
 
 type PanelModel struct {
-	ID          int      `json:"id,omitempty"`
-	Identifier  string   `json:"identifier,omitempty"`
-	Dscpanel    string   `json:"dscpanel"`
-	Num_serie   string   `json:"num_serie,omitempty"`
-	Active      int      `json:"active,omitempty"`
-	Ctrl_bright int      `json:"ctrl_bright,omitempty"`
-	Messages    []string `json:"messages,omitempty"`
+	IDPanel    string `json:"idpanel,omitempty"`
+	Identifier string `json:"identifier,omitempty"`
+	DscPanel   string `json:"dsc_panel"`
+	NumSerie   string `json:"num_serie,omitempty"`
+	Active     int    `json:"active"`
+	CtrlBright int    `json:"ctrl_bright,omitempty"`
+	//Messages    []string `json:"messages,omitempty"`
 }
 
 type User struct {
@@ -42,11 +42,11 @@ type Routes struct {
 	RequireAuthentication bool
 }
 
-type CreatePanelParamsModel struct {
-	Idpanel    string `json:"idpanel,omitempty"`
-	Identifier string `json:"identifier,omitempty"`
-	DscPanel   string `json:"dsc_panel,omitempty"`
-	NumSerie   string `json:"num_serie,omitempty"`
-	Active     int    `json:"active,omitempty"`
-	CtrlBright int    `json:"ctrl_bright,omitempty"`
-}
+// type CreatePanelParamsModel struct {
+// 	Idpanel    string `json:"idpanel,omitempty"`
+// 	Identifier string `json:"identifier,omitempty"`
+// 	DscPanel   string `json:"dsc_panel,omitempty"`
+// 	NumSerie   string `json:"num_serie,omitempty"`
+// 	Active     int    `json:"active,omitempty"`
+// 	CtrlBright int    `json:"ctrl_bright,omitempty"`
+// }
